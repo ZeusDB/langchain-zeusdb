@@ -7,8 +7,65 @@ authors = [
     { name = "ZeusDB", email = "contact@zeusdb.com" }
 ]
 requires-python = ">=3.13"
-dependencies = []
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11", 
+    "Programming Language :: Python :: 3.12",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "zeusdb>=0.0.7", # The ZeusDB mega package
+    "langchain-core>=0.3.74,<0.4",
+]
+
+[project.optional-dependencies]
+test = [
+    "pytest>=8.4.0",
+    "pytest-asyncio>=1.1.0",
+    "pytest-socket>=0.7.0", 
+    "pytest-watcher>=0.4.3",
+    "langchain-tests>=0.3.2" 
+]
+
+codespell = [
+    "codespell>=2.4.1",
+]
+
+lint = [
+    "ruff>=0.12.9",
+]
+
+typing = [
+    "mypy>=1.17.1",
+]
 
 [build-system]
-requires = ["uv_build>=0.8.11,<0.9.0"]
-build-backend = "uv_build"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/langchain_zeusdb"]
+
+[project.urls]
+"Homepage" = "https://github.com/zeusdb/langchain-zeusdb"
+"Repository" = "https://github.com/zeusdb/langchain-zeusdb"
+"Documentation" = "https://docs.zeusdb.com"
+"Bug Tracker" = "https://github.com/zeusdb/langchain-zeusdb/issues"
+
+# ---- tool configs ----
+[tool.ruff.lint]
+select = ["E", "F", "I", "T201"]
+
+[tool.mypy]
+disallow_untyped_defs = true
+
+[tool.coverage.run]
+omit = ["tests/*"]
+
+[tool.pytest.ini_options]
+addopts = "--strict-markers --strict-config --durations=5"
+markers = [
+    "compile: mark placeholder test used to compile integration tests without running them",
+]
+asyncio_mode = "auto"
