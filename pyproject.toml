@@ -1,0 +1,14 @@
+[project]
+name = "langchain-zeusdb"
+version = "0.1.0"
+description = "An integration package connecting ZeusDB and LangChain."
+readme = "README.md"
+authors = [
+    { name = "ZeusDB", email = "contact@zeusdb.com" }
+]
+requires-python = ">=3.13"
+dependencies = []
+
+[build-system]
+requires = ["uv_build>=0.8.11,<0.9.0"]
+build-backend = "uv_build"
