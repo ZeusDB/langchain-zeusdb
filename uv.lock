@@ -219,31 +219,13 @@ typing = [
     { name = "mypy" },
 ]
 
-[package.dev-dependencies]
-codespell = [
-    { name = "codespell" },
-]
-lint = [
-    { name = "ruff" },
-]
-test = [
-    { name = "langchain-tests" },
-    { name = "pytest" },
-    { name = "pytest-asyncio" },
-    { name = "pytest-socket" },
-    { name = "pytest-watcher" },
-]
-typing = [
-    { name = "mypy" },
-]
-
 [package.metadata]
 requires-dist = [
     { name = "codespell", marker = "extra == 'codespell'", specifier = ">=2.4.1" },
     { name = "langchain-core", specifier = ">=0.3.74,<0.4" },
-    { name = "langchain-tests", marker = "extra == 'test'", specifier = ">=0.3.2" },
+    { name = "langchain-tests", marker = "extra == 'test'", specifier = ">=0.3.5" },
     { name = "mypy", marker = "extra == 'typing'", specifier = ">=1.17.1" },
-    { name = "pytest", marker = "extra == 'test'", specifier = ">=8.4.0" },
+    { name = "pytest", marker = "extra == 'test'", specifier = ">=8.4.1" },
     { name = "pytest-asyncio", marker = "extra == 'test'", specifier = ">=1.1.0" },
     { name = "pytest-socket", marker = "extra == 'test'", specifier = ">=0.7.0" },
     { name = "pytest-watcher", marker = "extra == 'test'", specifier = ">=0.4.3" },
@@ -251,18 +233,6 @@ requires-dist = [
     { name = "zeusdb", specifier = ">=0.0.7" },
 ]
 provides-extras = ["test", "codespell", "lint", "typing"]
-
-[package.metadata.requires-dev]
-codespell = [{ name = "codespell", specifier = ">=2.4.1" }]
-lint = [{ name = "ruff", specifier = ">=0.12.9" }]
-test = [
-    { name = "langchain-tests", specifier = ">=0.3.5" },
-    { name = "pytest", specifier = ">=8.4.1" },
-    { name = "pytest-asyncio", specifier = ">=1.1.0" },
-    { name = "pytest-socket", specifier = ">=0.7.0" },
-    { name = "pytest-watcher", specifier = ">=0.4.3" },
-]
-typing = [{ name = "mypy", specifier = ">=1.17.1" }]
 
 [[package]]
 name = "langsmith"

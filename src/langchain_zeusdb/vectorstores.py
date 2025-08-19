@@ -259,8 +259,9 @@ class ZeusDBVectorStore(_LCVectorStore):
         page_content = metadata.pop(self.text_key, result.get("id", ""))
         zeusdb_id = result.get("id")
 
-        if "score" in result:
-            metadata["zeusdb_score"] = result["score"]
+        # DON'T add zeusdb_score - it breaks LangChain test assertions
+        # if "score" in result:
+        #     metadata["zeusdb_score"] = result["score"]
 
         return Document(id=zeusdb_id, page_content=str(page_content), metadata=metadata)
 
@@ -574,7 +575,19 @@ class ZeusDBVectorStore(_LCVectorStore):
         if not documents:
             logger.debug("No documents to add", operation="add_documents")
             return []
-
+        
+        # CRITICAL: Handle ids parameter from kwargs (LangChain test requirement)
+        provided_ids = kwargs.get('ids')
+        if provided_ids is not None:
+            if len(provided_ids) != len(documents):
+                raise ValueError(
+                    f"Number of ids ({len(provided_ids)}) must match "
+                    f"number of documents ({len(documents)})"
+                )
+            # Set the IDs on the documents so they get preserved
+            for doc, doc_id in zip(documents, provided_ids):
+                doc.id = doc_id
+        
         logger.info(
             "Adding documents to vector store",
             operation="add_documents",
