@@ -14,13 +14,16 @@ Features:
 - ZeusDB-specific features (quantization, persistence, stats)
 
 Usage:
-    >>> from zeusdb import VectorDatabase, ZeusDBLangChain
+    >>> from zeusdb import VectorDatabase, ZeusDBVectorStore
     >>> from langchain_openai import OpenAIEmbeddings
     >>>
     >>> vdb = VectorDatabase()
     >>> index = vdb.create("hnsw", dim=1536, space="cosine")
     >>>
-    >>> vectorstore = ZeusDBLangChain(zeusdb_index=index, embedding=OpenAIEmbeddings())
+    >>> vectorstore = ZeusDBVectorStore(
+    ...     zeusdb_index=index, 
+    ...     embedding=OpenAIEmbeddings()
+    ... )
     >>> docs = vectorstore.similarity_search("hello world", k=5)
     >>> retriever = vectorstore.as_retriever(search_type="mmr")
 
@@ -48,10 +51,13 @@ from typing import (
 )
 
 # -----------------------------------------------------------------------------
-# Enterprise Logging Integration with Safe Fallback
+# Enterprise Logging Integration with Safe Fallback: Latest for langchain-zeusdb package
 # -----------------------------------------------------------------------------
 try:
-    from .logging_config import get_logger as _get_logger  # type: ignore[import]
+    from zeusdb.logging_config import get_logger as _get_logger  # type: ignore[import]
+    from zeusdb.logging_config import (
+        operation_context as _operation_context,  # type: ignore[import]
+    )
 except Exception:  # fallback for OSS/dev environments
     import logging
     
@@ -78,19 +84,7 @@ except Exception:  # fallback for OSS/dev environments
             base.addHandler(logging.NullHandler())
         return _StructuredAdapter(base, {})
 
-# Initialize module logger (no configuration here - central config owns that)
-# Expose a single name with a single (loose) type for static checkers
-get_logger: Callable[[str], Any] = cast(Callable[[str], Any], _get_logger)
-logger = get_logger("zeusdb.langchain")
-
-# Operation context manager for structured tracing
-try:
-    from .logging_config import (
-        operation_context as _operation_context,  # type: ignore[import]
-    )
-except Exception:
     @contextmanager
-    #def operation_context(operation_name: str, **context):
     def _operation_context(operation_name: str, **context: Any):
         logger.debug(f"{operation_name} started", operation=operation_name, **context)
         start = perf_counter()
@@ -114,8 +108,15 @@ except Exception:
             )
             raise
 
+# Initialize module logger (no configuration here - central config owns that)
+# Expose a single name with a single (loose) type for static checkers
+get_logger: Callable[[str], Any] = cast(Callable[[str], Any], _get_logger)
+logger = get_logger("langchain_zeusdb")  # Updated logger name
+
 # Expose unified symbol (loosen the type to quiet static analyzers)
 operation_context = cast(Callable[..., Any], _operation_context)
+
+
 
 # -----------------------------------------------------------------------------
 # Import LangChain types for static checking; provide runtime shims if missing.
@@ -1212,7 +1213,8 @@ class ZeusDBVectorStore(_LCVectorStore):
         **kwargs: Any,
     ) -> "ZeusDBVectorStore":
         """Create VectorStore from texts."""
-        from .vector_database import VectorDatabase
+        # from .vector_database import VectorDatabase
+        from zeusdb import VectorDatabase  # Use mega package
 
         # Coerce once (avoids exhausting generators and re-iterating)
         texts_list = list(texts)
@@ -1558,7 +1560,8 @@ class ZeusDBVectorStore(_LCVectorStore):
         **kwargs: Any,
     ) -> "ZeusDBVectorStore":
         """Load ZeusDB index from disk."""
-        from .vector_database import VectorDatabase
+        # from .vector_database import VectorDatabase
+        from zeusdb import VectorDatabase  # Use mega package
 
         logger.info(
             "Loading ZeusDB index",
@@ -1814,7 +1817,8 @@ def create_zeusdb_vectorstore(
             **zeusdb_kwargs,
         )
     else:
-        from .vector_database import VectorDatabase
+        # from .vector_database import VectorDatabase
+        from zeusdb import VectorDatabase  # Use mega package
 
         test_embedding = embedding.embed_query("test")
         dim = len(test_embedding)
