@@ -14,7 +14,8 @@ Features:
 - ZeusDB-specific features (quantization, persistence, stats)
 
 Usage:
-    >>> from zeusdb import VectorDatabase, ZeusDBVectorStore
+    >>> from langchain_zeusdb import ZeusDBVectorStore  # Updated import
+    >>> from zeusdb import VectorDatabase
     >>> from langchain_openai import OpenAIEmbeddings
     >>>
     >>> vdb = VectorDatabase()
@@ -26,8 +27,6 @@ Usage:
     ... )
     >>> docs = vectorstore.similarity_search("hello world", k=5)
     >>> retriever = vectorstore.as_retriever(search_type="mmr")
-
-Note: This module requires langchain-core to be installed for full functionality.
 """
 
 from __future__ import annotations
