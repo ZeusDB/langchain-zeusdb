@@ -14,9 +14,9 @@ Features:
 - ZeusDB-specific features (quantization, persistence, stats)
 
 Usage:
-    >>> from langchain_zeusdb import ZeusDBVectorStore  # Updated import
+    >>> from langchain-zeusdb import ZeusDBVectorStore  # Updated import
     >>> from zeusdb import VectorDatabase
-    >>> from langchain_openai import OpenAIEmbeddings
+    >>> from langchain-openai import OpenAIEmbeddings
     >>>
     >>> vdb = VectorDatabase()
     >>> index = vdb.create("hnsw", dim=1536, space="cosine")
