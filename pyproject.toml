@@ -15,7 +15,7 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    "zeusdb>=0.0.7", # The ZeusDB mega package
+    "zeusdb>=0.0.8", # The ZeusDB mega package
     "langchain-core>=0.3.74,<0.4",
 ]
 
