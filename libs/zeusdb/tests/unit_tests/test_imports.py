@@ -1,7 +1,7 @@
 """Unit tests for langchain-zeusdb imports and basic functionality."""
 
 
-def test_imports():
+def test_imports() -> None:
     """Test that all public imports work correctly."""
     from langchain_zeusdb import AsyncZeusDBVectorStore, ZeusDBVectorStore
     from langchain_zeusdb.vectorstores import (
@@ -15,7 +15,7 @@ def test_imports():
     assert "langchain-core" in get_langchain_requirements()[0]
 
 
-def test_utility_functions():
+def test_utility_functions() -> None:
     """Test utility functions without requiring ZeusDB index."""
     from langchain_zeusdb.vectorstores import ZeusDBVectorStore
 
@@ -29,7 +29,7 @@ def test_utility_functions():
     assert 0.8 < distance < 1.2  # Should be ~1.0 for orthogonal vectors
 
 
-def test_convenience_function_validation():
+def test_convenience_function_validation() -> None:
     """Test that create_zeusdb_vectorstore validates inputs correctly."""
     import pytest
 
