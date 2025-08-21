@@ -96,7 +96,7 @@ jobs:
         working-directory: ${{ inputs.working-directory }}
         run: |
           #uv sync --group lint --group typing
-          uv sync --all-groups
+          uv sync --all-groups --verbose
 
       - name: Analysing the code with our lint
         working-directory: ${{ inputs.working-directory }}
