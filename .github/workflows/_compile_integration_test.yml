@@ -35,8 +35,8 @@ jobs:
 
       - name: Install integration dependencies
         shell: bash
-        run: uv sync --group test --group test_integration
-        #run: uv sync --all-groups
+        #run: uv sync --group test --group test_integration
+        run: uv sync --all-groups
 
       - name: Check integration tests compile
         shell: bash

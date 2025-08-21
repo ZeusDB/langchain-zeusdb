@@ -95,8 +95,8 @@ jobs:
         # It doesn't matter how you change it, any change will cause a cache-bust.
         working-directory: ${{ inputs.working-directory }}
         run: |
-          uv sync --group lint --group typing
-          #uv sync --all-groups
+          #uv sync --group lint --group typing
+          uv sync --all-groups
 
       - name: Analysing the code with our lint
         working-directory: ${{ inputs.working-directory }}

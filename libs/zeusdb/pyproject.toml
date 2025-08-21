@@ -75,3 +75,6 @@ markers = [
     "compile: mark placeholder test used to compile integration tests without running them",
 ]
 asyncio_mode = "auto"
+
+[tool.uv]
+default-groups = ["lint", "typing", "test", "test_integration"]
