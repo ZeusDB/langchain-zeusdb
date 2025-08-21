@@ -50,11 +50,12 @@ class TestZeusDBVectorStoreAsync(AsyncReadWriteTestSuite):
             # Cleanup if needed - ZeusDB doesn't require special cleanup
             pass
 
+
 @pytest.mark.compile
 def test_integration_compile_check() -> None:
     """Compilation check for integration tests."""
     # This test just verifies that imports work
-    
+
     from zeusdb import VectorDatabase  # noqa: F401
 
     from langchain_zeusdb import ZeusDBVectorStore  # noqa: F401
