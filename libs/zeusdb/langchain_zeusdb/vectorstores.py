@@ -93,7 +93,7 @@ except Exception:  # fallback for OSS/dev environments
                 f"{operation_name} completed",
                 operation=operation_name,
                 duration_ms=duration_ms,
-                **context
+                **context,
             )
         except Exception as e:
             duration_ms = (perf_counter() - start) * 1000
@@ -102,7 +102,7 @@ except Exception:  # fallback for OSS/dev environments
                 operation=operation_name,
                 duration_ms=duration_ms,
                 error=str(e),
-                **context
+                **context,
             )
             raise
 
@@ -319,7 +319,7 @@ class ZeusDBVectorStore(_LCVectorStore):
             operation="texts_to_zeusdb_format",
             text_count=len(texts),
             has_metadata=metadatas is not None,
-            has_ids=ids is not None
+            has_ids=ids is not None,
         )
 
         return {"ids": ids, "metadatas": enriched_mds, "texts": texts}
@@ -527,7 +527,7 @@ class ZeusDBVectorStore(_LCVectorStore):
                             total_errors=result.total_errors,
                             success_count=getattr(result, "total_inserted", 0),
                         )
-                        
+
                         # Verbose error details at DEBUG level to avoid noise
                         if kwargs.get("verbose", False):
                             errors = getattr(result, "errors", [])
@@ -546,8 +546,8 @@ class ZeusDBVectorStore(_LCVectorStore):
                     operation="add_texts",
                     embed_ms=embed_ms,
                     add_ms=add_ms,
-                    total_inserted=inserted 
-                    if inserted is not None 
+                    total_inserted=inserted
+                    if inserted is not None
                     else len(texts_list),
                 )
 
@@ -774,13 +774,13 @@ class ZeusDBVectorStore(_LCVectorStore):
                                         if records:
                                             record = records[0]
                                             fallback_doc = (
-                                                self._zeusdb_result_to_document( # noqa: E501
+                                                self._zeusdb_result_to_document(  # noqa: E501
                                                     {
                                                         "id": record["id"],
                                                         "metadata": record["metadata"],
-                                                        # High distance score 
+                                                        # High distance score
                                                         # (low similarity)
-                                                        "score": 2.0
+                                                        "score": 2.0,
                                                     }
                                                 )
                                             )
@@ -792,7 +792,7 @@ class ZeusDBVectorStore(_LCVectorStore):
                                     operation="similarity_search",
                                     final_count=len(docs),
                                 )
-                            
+
                             except Exception as fallback_error:
                                 logger.debug(
                                     "Manual retrieval fallback failed",
@@ -826,7 +826,7 @@ class ZeusDBVectorStore(_LCVectorStore):
                     search_ms=search_ms,
                     error=str(e),
                     error_type=type(e).__name__,
-                    exc_info=True
+                    exc_info=True,
                 )
                 return []
 
@@ -1501,7 +1501,7 @@ class ZeusDBVectorStore(_LCVectorStore):
         k: int = 4,
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> List[Document]:
         """Async version of max_marginal_relevance_search."""
         return await run_in_executor(
@@ -1583,7 +1583,7 @@ class ZeusDBVectorStore(_LCVectorStore):
             logger.debug(
                 "Retrieved performance info",
                 operation="get_zeusdb_performance_info",
-                info_keys=list(info.keys()) if info else []
+                info_keys=list(info.keys()) if info else [],
             )
             return info
         except Exception as e:
@@ -1592,7 +1592,7 @@ class ZeusDBVectorStore(_LCVectorStore):
                 operation="get_zeusdb_performance_info",
                 error=str(e),
                 error_type=type(e).__name__,
-                exc_info=True
+                exc_info=True,
             )
             return {}
 
@@ -1813,10 +1813,7 @@ class AsyncZeusDBVectorStore(ZeusDBVectorStore):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        logger.info(
-            "AsyncZeusDBVectorStore initialized",
-            operation="async_init"
-        )
+        logger.info("AsyncZeusDBVectorStore initialized", operation="async_init")
         # Reserved for future native-async optimizations
 
 
