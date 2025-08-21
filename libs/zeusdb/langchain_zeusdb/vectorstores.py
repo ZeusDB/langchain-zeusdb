@@ -66,7 +66,7 @@ except Exception:  # fallback for OSS/dev environments
         for stdlib logging compatibility.
         """
 
-        #def process(self, msg, kwargs):
+        # def process(self, msg, kwargs):
         def process(
             self, msg: str, kwargs: MutableMapping[str, Any]
         ) -> Tuple[str, MutableMapping[str, Any]]:
