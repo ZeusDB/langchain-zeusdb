@@ -9,7 +9,7 @@ on:
         description: "From which folder this pipeline executes"
 
 env:
-  #UV_FROZEN: "true"
+  UV_FROZEN: "true"
 
 jobs:
   build:
