@@ -21,12 +21,19 @@ dependencies = [
     "langchain-core>=0.3.74,<0.4",
 ]
 
-[project.optional-dependencies]
+[dependency-groups]
 test = [
     "pytest>=8.4.1",
     "pytest-asyncio>=1.1.0",
     "pytest-socket>=0.7.0", 
     "pytest-watcher>=0.4.3",
+    "langchain-tests>=0.3.5" 
+]
+
+test_integration = [
+    "pytest>=8.4.1",
+    "pytest-asyncio>=1.1.0",
+    "pytest-socket>=0.7.0", 
     "langchain-tests>=0.3.5" 
 ]
 
