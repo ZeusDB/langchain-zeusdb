@@ -40,7 +40,7 @@ class TestZeusDBVectorStoreAsync(AsyncReadWriteTestSuite):
         from zeusdb import VectorDatabase
 
         vdb = VectorDatabase()
-         # Use EMBEDDING_SIZE=6 from langchain_tests
+        # Use EMBEDDING_SIZE=6 from langchain_tests
         index = vdb.create("hnsw", dim=6, space="cosine")
         store = ZeusDBVectorStore(zeusdb_index=index, embedding=self.get_embeddings())
 
