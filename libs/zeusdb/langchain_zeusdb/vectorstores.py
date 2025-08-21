@@ -42,7 +42,9 @@ from typing import (
     Callable,
     Dict,
     Iterable,
+    Iterator,
     List,
+    MutableMapping,
     Optional,
     Sequence,
     Tuple,
@@ -64,7 +66,10 @@ except Exception:  # fallback for OSS/dev environments
         for stdlib logging compatibility.
         """
 
-        def process(self, msg, kwargs):
+        #def process(self, msg, kwargs):
+        def process(
+            self, msg: str, kwargs: MutableMapping[str, Any]
+        ) -> Tuple[str, MutableMapping[str, Any]]:
             allowed = {"exc_info", "stack_info", "stacklevel", "extra"}
             extra = kwargs.get("extra", {}) or {}
             if not isinstance(extra, dict):
@@ -83,7 +88,7 @@ except Exception:  # fallback for OSS/dev environments
         return _StructuredAdapter(base, {})
 
     @contextmanager
-    def _operation_context(operation_name: str, **context: Any):
+    def _operation_context(operation_name: str, **context: Any) -> Iterator[None]:
         logger.debug(f"{operation_name} started", operation=operation_name, **context)
         start = perf_counter()
         try:
@@ -1811,7 +1816,7 @@ class ZeusDBVectorStore(_LCVectorStore):
 class AsyncZeusDBVectorStore(ZeusDBVectorStore):
     """Async-optimized version of ZeusDBVectorStore."""
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         logger.info("AsyncZeusDBVectorStore initialized", operation="async_init")
         # Reserved for future native-async optimizations
