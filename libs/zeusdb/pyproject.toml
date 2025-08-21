@@ -30,22 +30,18 @@ test = [
     "pytest-watcher>=0.4.3",
     "langchain-tests>=0.3.5" 
 ]
-
 test_integration = [
     "pytest>=8.4.1",
     "pytest-asyncio>=1.1.0",
     "pytest-socket>=0.7.0", 
     "langchain-tests>=0.3.5" 
 ]
-
 codespell = [
     "codespell>=2.4.1",
 ]
-
 lint = [
     "ruff>=0.12.9",
 ]
-
 typing = [
     "mypy>=1.17.1",
 ]
