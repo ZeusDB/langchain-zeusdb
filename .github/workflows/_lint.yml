@@ -40,6 +40,49 @@ jobs:
         uses: "./.github/actions/uv_setup"
         with:
           python-version: ${{ matrix.python-version }}
+      
+      # START DEBUG
+      - name: Debug pyproject.toml and environment
+        working-directory: ${{ inputs.working-directory }}
+        run: |
+          echo "=== Current working directory ==="
+          pwd
+          echo ""
+          echo "=== Directory contents ==="
+          ls -la
+          echo ""
+          echo "=== pyproject.toml exists? ==="
+          test -f pyproject.toml && echo "✅ pyproject.toml found" || echo "❌ pyproject.toml NOT found"
+          echo ""
+          echo "=== pyproject.toml content ==="
+          cat pyproject.toml
+          echo ""
+          echo "=== UV version ==="
+          uv --version
+          echo ""
+          echo "=== Python version ==="
+          python --version
+          echo ""
+          echo "=== Check TOML syntax ==="
+          python -c "
+          import tomllib
+          try:
+            with open('pyproject.toml', 'rb') as f:
+              data = tomllib.load(f)
+              print('✅ TOML syntax is valid')
+              print('Available top-level keys:', list(data.keys()))
+              if 'dependency-groups' in data:
+                print('✅ dependency-groups found')
+                print('Available groups:', list(data['dependency-groups'].keys()))
+              else:
+                print('❌ dependency-groups NOT found')
+                if 'project' in data and 'optional-dependencies' in data['project']:
+                    print('⚠️  Found old optional-dependencies format')
+          except Exception as e:
+              print('❌ TOML parsing failed:', e)
+          "
+      # END DEBUG
+        
 
       - name: Install dependencies
         # Also installs dev/lint/test/typing dependencies, to ensure we have
