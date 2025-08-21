@@ -22,7 +22,7 @@ Usage:
     >>> index = vdb.create("hnsw", dim=1536, space="cosine")
     >>>
     >>> vectorstore = ZeusDBVectorStore(
-    ...     zeusdb_index=index, 
+    ...     zeusdb_index=index,
     ...     embedding=OpenAIEmbeddings()
     ... )
     >>> docs = vectorstore.similarity_search("hello world", k=5)
@@ -57,12 +57,13 @@ try:
     from zeusdb.logging_config import operation_context as _operation_context  # type: ignore[import]
 except Exception:  # fallback for OSS/dev environments
     import logging
-    
+
     class _StructuredAdapter(logging.LoggerAdapter):
         """
-        Adapter that moves arbitrary kwargs into 'extra' 
+        Adapter that moves arbitrary kwargs into 'extra'
         for stdlib logging compatibility.
         """
+
         def process(self, msg, kwargs):
             allowed = {"exc_info", "stack_info", "stacklevel", "extra"}
             extra = kwargs.get("extra", {}) or {}
@@ -74,7 +75,7 @@ except Exception:  # fallback for OSS/dev environments
                 extra.update(fields)
                 kwargs["extra"] = extra
             return msg, kwargs
-    
+
     def _get_logger(name: str) -> logging.LoggerAdapter:
         base = logging.getLogger(name)
         if not base.handlers:
@@ -89,21 +90,22 @@ except Exception:  # fallback for OSS/dev environments
             yield
             duration_ms = (perf_counter() - start) * 1000
             logger.info(
-                f"{operation_name} completed", 
-                operation=operation_name, 
-                duration_ms=duration_ms, 
+                f"{operation_name} completed",
+                operation=operation_name,
+                duration_ms=duration_ms,
                 **context
             )
         except Exception as e:
             duration_ms = (perf_counter() - start) * 1000
             logger.error(
-                f"{operation_name} failed", 
-                operation=operation_name, 
-                duration_ms=duration_ms, 
-                error=str(e), 
+                f"{operation_name} failed",
+                operation=operation_name,
+                duration_ms=duration_ms,
+                error=str(e),
                 **context
             )
             raise
+
 
 # Initialize module logger (no configuration here - central config owns that)
 # Expose a single name with a single (loose) type for static checkers
@@ -114,7 +116,6 @@ logger = get_logger("langchain_zeusdb")  # Updated logger name
 operation_context = cast(Callable[..., Any], _operation_context)
 
 
-
 # -----------------------------------------------------------------------------
 # Import LangChain types for static checking; provide runtime shims if missing.
 # -----------------------------------------------------------------------------
@@ -123,6 +124,7 @@ if TYPE_CHECKING:
     from langchain_core.embeddings import Embeddings
     from langchain_core.runnables.config import run_in_executor
     from langchain_core.vectorstores import VectorStore as _LCVectorStore
+
     LANGCHAIN_AVAILABLE: bool
 else:
     try:
@@ -130,6 +132,7 @@ else:
         from langchain_core.embeddings import Embeddings
         from langchain_core.runnables.config import run_in_executor
         from langchain_core.vectorstores import VectorStore as _LCVectorStore
+
         LANGCHAIN_AVAILABLE = True
     except Exception:  # ImportError in most cases
         LANGCHAIN_AVAILABLE = False
@@ -187,7 +190,7 @@ class ZeusDBVectorStore(_LCVectorStore):
             logger.error(
                 "LangChain dependency missing",
                 operation="init",
-                available_langchain=False
+                available_langchain=False,
             )
             raise ImportError(
                 "ZeusDBLangChain requires langchain-core package.\n"
@@ -196,7 +199,7 @@ class ZeusDBVectorStore(_LCVectorStore):
                 "  pip install langchain-core\n"
                 "  pip/uv install 'zeusdb-vector-database[langchain]'"
             )
-        
+
         super().__init__(**kwargs)
         self.zeusdb_index = zeusdb_index
         self.embedding = embedding
@@ -207,7 +210,7 @@ class ZeusDBVectorStore(_LCVectorStore):
             operation="init",
             text_key=text_key,
             has_index=zeusdb_index is not None,
-            has_embedding=embedding is not None
+            has_embedding=embedding is not None,
         )
 
     # For LangChain's retriever tags
@@ -230,14 +233,14 @@ class ZeusDBVectorStore(_LCVectorStore):
             logger.debug(
                 "Failed to detect space, defaulting to cosine",
                 operation="relevance_score_selection",
-                error=str(e)
+                error=str(e),
             )
             space = "cosine"
 
         logger.debug(
             "Selected relevance score function",
             operation="relevance_score_selection",
-            space=space
+            space=space,
         )
 
         if space == "cosine":
@@ -264,8 +267,7 @@ class ZeusDBVectorStore(_LCVectorStore):
         return Document(id=zeusdb_id, page_content=str(page_content), metadata=metadata)
 
     def _langchain_docs_to_zeusdb_format(
-            self, 
-            documents: List[Document]
+        self, documents: List[Document]
     ) -> Dict[str, Any]:
         """Convert LangChain Documents to ZeusDB batch format."""
         if not documents:
@@ -287,7 +289,7 @@ class ZeusDBVectorStore(_LCVectorStore):
             "Converted documents to ZeusDB format",
             operation="docs_to_zeusdb_format",
             doc_count=len(documents),
-            has_ids=all(d.id is not None for d in documents)
+            has_ids=all(d.id is not None for d in documents),
         )
 
         return {"ids": ids, "metadatas": metadatas, "texts": texts}
@@ -337,20 +339,20 @@ class ZeusDBVectorStore(_LCVectorStore):
                 raw = getattr(idx, name)
                 try:
                     # may be int / float / str / numpy scalar / etc.
-                    val = raw() if callable(raw) else raw  
+                    val = raw() if callable(raw) else raw
 
                     # Fast path: already an int
                     if isinstance(val, int):
                         return val
-                    
+
                     # Float -> int
                     if isinstance(val, float):
                         return int(val)
-                    
+
                     # String of digits -> int
                     if isinstance(val, str):
                         return int(val) if val.isdigit() else None
-                    
+
                     # NumPy scalar or objects exposing .item()
                     item = getattr(val, "item", None)
                     if callable(item):
@@ -359,7 +361,7 @@ class ZeusDBVectorStore(_LCVectorStore):
                             return v2
                         if isinstance(v2, float):
                             return int(v2)
-                        
+
                     # Objects that implement __int__
                     if hasattr(val, "__int__"):
                         try:
@@ -409,9 +411,7 @@ class ZeusDBVectorStore(_LCVectorStore):
         return self._extract_index_dim(self.zeusdb_index)
 
     def _coerce_vector(
-            self, 
-            embedding: Sequence[float], 
-            where: str
+        self, embedding: Sequence[float], where: str
     ) -> Optional[List[float]]:
         """
         Coerce input vector (list/tuple/np.ndarray) to List[float] and dimension-check.
@@ -431,7 +431,7 @@ class ZeusDBVectorStore(_LCVectorStore):
                 "Vector coercion failed",
                 operation=where,
                 error=str(e),
-                error_type=type(e).__name__
+                error_type=type(e).__name__,
             )
             warnings.warn(
                 f"Could not coerce embedding to floats: {e}",
@@ -442,10 +442,7 @@ class ZeusDBVectorStore(_LCVectorStore):
 
         if not vec:
             # Dual log+warn for empty embeddings
-            logger.warning(
-                "Empty embedding received",
-                operation=where
-            )
+            logger.warning("Empty embedding received", operation=where)
             warnings.warn(
                 "Received an empty embedding vector",
                 category=RuntimeWarning,
@@ -460,12 +457,12 @@ class ZeusDBVectorStore(_LCVectorStore):
                 "Embedding dimension mismatch",
                 operation=where,
                 embedding_dim=len(vec),
-                index_dim=expected
+                index_dim=expected,
             )
             warnings.warn(
                 "Embedding dimensions don't match index; results may be degraded.",
                 category=RuntimeWarning,
-                stacklevel=2
+                stacklevel=2,
             )
             # Continue to let backend handle or raise if it can't
 
@@ -493,7 +490,7 @@ class ZeusDBVectorStore(_LCVectorStore):
             operation="add_texts",
             text_count=len(texts_list),
             has_metadata=metadatas is not None,
-            has_ids=ids is not None
+            has_ids=ids is not None,
         )
 
         with operation_context("add_texts", text_count=len(texts_list)):
@@ -506,7 +503,7 @@ class ZeusDBVectorStore(_LCVectorStore):
                     "Embedding failed",
                     operation="add_texts",
                     text_count=len(texts_list),
-                    exc_info=True
+                    exc_info=True,
                 )
                 return []
 
@@ -517,8 +514,7 @@ class ZeusDBVectorStore(_LCVectorStore):
             t1 = perf_counter()
             try:
                 result = self.zeusdb_index.add(
-                    batch, 
-                    overwrite=kwargs.get("overwrite", True)
+                    batch, overwrite=kwargs.get("overwrite", True)
                 )
                 add_ms = (perf_counter() - t1) * 1000
 
@@ -529,7 +525,7 @@ class ZeusDBVectorStore(_LCVectorStore):
                             "Some texts failed to add",
                             operation="add_texts",
                             total_errors=result.total_errors,
-                            success_count=getattr(result, "total_inserted", 0)
+                            success_count=getattr(result, "total_inserted", 0),
                         )
                         
                         # Verbose error details at DEBUG level to avoid noise
@@ -541,7 +537,7 @@ class ZeusDBVectorStore(_LCVectorStore):
                                         "Add error item",
                                         operation="add_texts",
                                         error_index=i,
-                                        error_message=str(err)
+                                        error_message=str(err),
                                     )
 
                 inserted = getattr(result, "total_inserted", None)
@@ -550,7 +546,9 @@ class ZeusDBVectorStore(_LCVectorStore):
                     operation="add_texts",
                     embed_ms=embed_ms,
                     add_ms=add_ms,
-                    total_inserted=inserted if inserted is not None else len(texts_list)
+                    total_inserted=inserted 
+                    if inserted is not None 
+                    else len(texts_list),
                 )
 
             except Exception as e:
@@ -563,7 +561,7 @@ class ZeusDBVectorStore(_LCVectorStore):
                     add_ms=add_ms,
                     error=str(e),
                     error_type=type(e).__name__,
-                    exc_info=True
+                    exc_info=True,
                 )
 
         return batch["ids"]
@@ -573,9 +571,9 @@ class ZeusDBVectorStore(_LCVectorStore):
         if not documents:
             logger.debug("No documents to add", operation="add_documents")
             return []
-        
+
         # CRITICAL: Handle ids parameter from kwargs (LangChain test requirement)
-        provided_ids = kwargs.get('ids')
+        provided_ids = kwargs.get("ids")
         if provided_ids is not None:
             if len(provided_ids) != len(documents):
                 raise ValueError(
@@ -585,17 +583,17 @@ class ZeusDBVectorStore(_LCVectorStore):
             # Set the IDs on the documents so they get preserved
             for doc, doc_id in zip(documents, provided_ids):
                 doc.id = doc_id
-        
+
         logger.info(
             "Adding documents to vector store",
             operation="add_documents",
             doc_count=len(documents),
-            has_ids=all(d.id is not None for d in documents)
+            has_ids=all(d.id is not None for d in documents),
         )
 
         with operation_context("add_documents", doc_count=len(documents)):
             batch = self._langchain_docs_to_zeusdb_format(documents)
-            
+
             try:
                 t0 = perf_counter()
                 vectors = self.embedding.embed_documents(batch["texts"])
@@ -605,7 +603,7 @@ class ZeusDBVectorStore(_LCVectorStore):
                     "Embedding failed",
                     operation="add_documents",
                     doc_count=len(documents),
-                    exc_info=True
+                    exc_info=True,
                 )
                 return []
 
@@ -615,8 +613,7 @@ class ZeusDBVectorStore(_LCVectorStore):
             t1 = perf_counter()
             try:
                 result = self.zeusdb_index.add(
-                    batch, 
-                    overwrite=kwargs.get("overwrite", True)
+                    batch, overwrite=kwargs.get("overwrite", True)
                 )
                 add_ms = (perf_counter() - t1) * 1000
 
@@ -626,7 +623,7 @@ class ZeusDBVectorStore(_LCVectorStore):
                             "Some documents failed to add",
                             operation="add_documents",
                             total_errors=result.total_errors,
-                            success_count=getattr(result, "total_inserted", 0)
+                            success_count=getattr(result, "total_inserted", 0),
                         )
 
                 inserted = getattr(result, "total_inserted", None)
@@ -635,7 +632,7 @@ class ZeusDBVectorStore(_LCVectorStore):
                     operation="add_documents",
                     embed_ms=embed_ms,
                     add_ms=add_ms,
-                    total_inserted=inserted if inserted is not None else len(documents)
+                    total_inserted=inserted if inserted is not None else len(documents),
                 )
 
             except Exception as e:
@@ -646,25 +643,21 @@ class ZeusDBVectorStore(_LCVectorStore):
                     doc_count=len(documents),
                     embed_ms=embed_ms,
                     add_ms=add_ms,
-                    error=str(e), 
+                    error=str(e),
                     error_type=type(e).__name__,
-                    exc_info=True
+                    exc_info=True,
                 )
 
         return batch["ids"]
 
-
     # Similiarty Search
-    # This falls back to returning any available documents rather 
+    # This falls back to returning any available documents rather
     # than correctly returning nothing.
-    # LangChain tests expect that when you ask for k=2 documents, you should get 
-    # exactly 2 documents if there are at least 2 in the index, regardless of 
+    # LangChain tests expect that when you ask for k=2 documents, you should get
+    # exactly 2 documents if there are at least 2 in the index, regardless of
     # their similarity to the query.
     def similarity_search(
-            self,
-            query: str,
-            k: int = 4,
-            **kwargs: Any
+        self, query: str, k: int = 4, **kwargs: Any
     ) -> List[Document]:
         """Search for similar documents by query text."""
         has_filter = kwargs.get("filter") is not None
@@ -676,14 +669,11 @@ class ZeusDBVectorStore(_LCVectorStore):
             query_length=len(query),
             top_k=k,
             has_filter=has_filter,
-            ef_search=ef_search
+            ef_search=ef_search,
         )
 
         with operation_context(
-            "similarity_search",
-            top_k=k,
-            has_filter=has_filter,
-            ef_search=ef_search
+            "similarity_search", top_k=k, has_filter=has_filter, ef_search=ef_search
         ):
             t0 = perf_counter()
             q_vec = self.embedding.embed_query(query)
@@ -703,7 +693,7 @@ class ZeusDBVectorStore(_LCVectorStore):
                 docs = [self._zeusdb_result_to_document(r) for r in results]
 
                 # ENHANCED FIX FOR LANGCHAIN TESTS:
-                # If we got fewer results than requested (and no filters), 
+                # If we got fewer results than requested (and no filters),
                 # try to find more documents using a broader search.
                 # This handles cases where HNSW doesn't return enough results
                 # due to negative similarities in the test embedding function.
@@ -713,20 +703,20 @@ class ZeusDBVectorStore(_LCVectorStore):
                         "Got fewer results than requested, trying broader search",
                         operation="similarity_search",
                         initial_results=len(docs),
-                        requested_k=k
+                        requested_k=k,
                     )
 
                     # Get total document count to see if more documents are available
                     total_docs = self.get_vector_count()
 
                     if total_docs > len(docs):
-                        # Try with much higher ef_search to 
+                        # Try with much higher ef_search to
                         # force HNSW to return more results
                         broader_results = self.zeusdb_index.search(
                             vector=q_vec,
                             filter=None,  # No filter for this fallback
                             # Request up to k or total available
-                            top_k=min(k, total_docs),  
+                            top_k=min(k, total_docs),
                             ef_search=max(500, total_docs * 3),  # Very high ef_search
                             return_vector=False,
                         )
@@ -734,7 +724,7 @@ class ZeusDBVectorStore(_LCVectorStore):
                         if len(broader_results) > len(docs):
                             # We found more documents with broader search
                             broader_docs = [
-                                self._zeusdb_result_to_document(r) 
+                                self._zeusdb_result_to_document(r)
                                 for r in broader_results
                             ]
 
@@ -749,10 +739,10 @@ class ZeusDBVectorStore(_LCVectorStore):
                                 "Broader search found additional results",
                                 operation="similarity_search",
                                 additional_results=len(docs) - len(results),
-                                final_count=len(docs)
+                                final_count=len(docs),
                             )
 
-                        # LAST RESORT: If we still don't have enough results and there 
+                        # LAST RESORT: If we still don't have enough results and there
                         # are documents in the index, manually retrieve some documents
                         if len(docs) < k and total_docs > len(docs):
                             logger.debug(
@@ -763,13 +753,13 @@ class ZeusDBVectorStore(_LCVectorStore):
                                 operation="similarity_search",
                                 current_count=len(docs),
                                 target_k=k,
-                                total_available=total_docs
+                                total_available=total_docs,
                             )
 
                             try:
                                 # Get a list of available documents
                                 # Get more than needed
-                                available_docs = self.zeusdb_index.list(number=k * 2)  
+                                available_docs = self.zeusdb_index.list(number=k * 2)
                                 existing_ids = {doc.id for doc in docs}
 
                                 for doc_id, metadata in available_docs:
@@ -779,19 +769,20 @@ class ZeusDBVectorStore(_LCVectorStore):
                                     if doc_id not in existing_ids:
                                         # Get the full document
                                         records = self.zeusdb_index.get_records(
-                                            doc_id, 
-                                            return_vector=False
+                                            doc_id, return_vector=False
                                         )
                                         if records:
                                             record = records[0]
-                                            fallback_doc = self._zeusdb_result_to_document( # noqa: E501
-                                                {
-                                                    "id": record["id"],
-                                                    "metadata": record["metadata"],
-                                                    # High distance score 
-                                                    # (low similarity)
-                                                    "score": 2.0
-                                                }
+                                            fallback_doc = (
+                                                self._zeusdb_result_to_document( # noqa: E501
+                                                    {
+                                                        "id": record["id"],
+                                                        "metadata": record["metadata"],
+                                                        # High distance score 
+                                                        # (low similarity)
+                                                        "score": 2.0
+                                                    }
+                                                )
                                             )
                                             docs.append(fallback_doc)
                                             existing_ids.add(doc_id)
@@ -799,14 +790,14 @@ class ZeusDBVectorStore(_LCVectorStore):
                                 logger.debug(
                                     "Manual retrieval added documents",
                                     operation="similarity_search",
-                                    final_count=len(docs)
+                                    final_count=len(docs),
                                 )
                             
                             except Exception as fallback_error:
                                 logger.debug(
                                     "Manual retrieval fallback failed",
                                     operation="similarity_search",
-                                    error=str(fallback_error)
+                                    error=str(fallback_error),
                                 )
 
                 search_ms = (perf_counter() - t1) * 1000
@@ -818,11 +809,11 @@ class ZeusDBVectorStore(_LCVectorStore):
                     final_docs=len(docs),
                     embed_ms=embed_ms,
                     search_ms=search_ms,
-                    top_k=k
+                    top_k=k,
                 )
 
                 return docs
-            
+
             except Exception as e:
                 search_ms = (perf_counter() - t1) * 1000
                 logger.error(
@@ -839,10 +830,6 @@ class ZeusDBVectorStore(_LCVectorStore):
                 )
                 return []
 
-
-
-
-
     def similarity_search_with_score(
         self, query: str, k: int = 4, **kwargs: Any
     ) -> List[Tuple[Document, float]]:
@@ -852,7 +839,7 @@ class ZeusDBVectorStore(_LCVectorStore):
             operation="similarity_search_with_score",
             query_length=len(query),
             top_k=k,
-            has_filter=kwargs.get("filter") is not None
+            has_filter=kwargs.get("filter") is not None,
         )
 
         with operation_context("similarity_search_with_score", top_k=k):
@@ -874,10 +861,7 @@ class ZeusDBVectorStore(_LCVectorStore):
                 out: List[Tuple[Document, float]] = []
                 for r in results:
                     out.append(
-                        (
-                            self._zeusdb_result_to_document(r), 
-                            float(r.get("score", 0.0))
-                        )
+                        (self._zeusdb_result_to_document(r), float(r.get("score", 0.0)))
                     )
 
                 logger.info(
@@ -886,7 +870,7 @@ class ZeusDBVectorStore(_LCVectorStore):
                     results_count=len(results),
                     embed_ms=embed_ms,
                     search_ms=search_ms,
-                    top_k=k
+                    top_k=k,
                 )
 
                 return out
@@ -902,7 +886,7 @@ class ZeusDBVectorStore(_LCVectorStore):
                     search_ms=search_ms,
                     error=str(e),
                     error_type=type(e).__name__,
-                    exc_info=True
+                    exc_info=True,
                 )
                 return []
 
@@ -930,7 +914,7 @@ class ZeusDBVectorStore(_LCVectorStore):
             operation="similarity_search_by_vector",
             vector_dim=len(vec),
             top_k=k,
-            has_filter=kwargs.get("filter") is not None
+            has_filter=kwargs.get("filter") is not None,
         )
 
         with operation_context("similarity_search_by_vector", top_k=k):
@@ -952,7 +936,7 @@ class ZeusDBVectorStore(_LCVectorStore):
                     operation="similarity_search_by_vector",
                     results_count=len(results),
                     search_ms=search_ms,
-                    top_k=k
+                    top_k=k,
                 )
 
                 return docs
@@ -967,7 +951,7 @@ class ZeusDBVectorStore(_LCVectorStore):
                     search_ms=search_ms,
                     error=str(e),
                     error_type=type(e).__name__,
-                    exc_info=True
+                    exc_info=True,
                 )
                 return []
 
@@ -977,9 +961,7 @@ class ZeusDBVectorStore(_LCVectorStore):
             return []
 
         logger.debug(
-            "Getting documents by IDs",
-            operation="get_by_ids",
-            id_count=len(ids)
+            "Getting documents by IDs", operation="get_by_ids", id_count=len(ids)
         )
 
         try:
@@ -991,7 +973,7 @@ class ZeusDBVectorStore(_LCVectorStore):
                 id_count=len(ids),
                 error=str(e),
                 error_type=type(e).__name__,
-                exc_info=True
+                exc_info=True,
             )
             return []
 
@@ -1001,9 +983,7 @@ class ZeusDBVectorStore(_LCVectorStore):
             page_content = metadata.pop(self.text_key, rec.get("id", ""))
             did = rec.get("id")
             by_id[str(did)] = Document(
-                id=did, 
-                page_content=str(page_content), 
-                metadata=metadata
+                id=did, page_content=str(page_content), metadata=metadata
             )
 
         result_docs = [by_id[str(i)] for i in ids if str(i) in by_id]
@@ -1012,7 +992,7 @@ class ZeusDBVectorStore(_LCVectorStore):
             "Get by IDs completed",
             operation="get_by_ids",
             requested_count=len(ids),
-            found_count=len(result_docs)
+            found_count=len(result_docs),
         )
 
         return result_docs
@@ -1022,11 +1002,7 @@ class ZeusDBVectorStore(_LCVectorStore):
         if not ids:
             return False
 
-        logger.info(
-            "Deleting documents",
-            operation="delete",
-            id_count=len(ids)
-        )
+        logger.info("Deleting documents", operation="delete", id_count=len(ids))
 
         success_count = 0
         for did in ids:
@@ -1039,7 +1015,7 @@ class ZeusDBVectorStore(_LCVectorStore):
                     "Failed to delete document",
                     operation="delete",
                     document_id=did,
-                    error=str(e)
+                    error=str(e),
                 )
                 if kwargs.get("verbose"):
                     logger.debug(
@@ -1047,7 +1023,7 @@ class ZeusDBVectorStore(_LCVectorStore):
                         operation="delete",
                         document_id=did,
                         error_type=type(e).__name__,
-                        exc_info=True
+                        exc_info=True,
                     )
 
         all_successful = success_count == len(ids)
@@ -1056,7 +1032,7 @@ class ZeusDBVectorStore(_LCVectorStore):
             operation="delete",
             requested_count=len(ids),
             success_count=success_count,
-            all_successful=all_successful
+            all_successful=all_successful,
         )
 
         return all_successful
@@ -1083,7 +1059,7 @@ class ZeusDBVectorStore(_LCVectorStore):
             top_k=k,
             fetch_k=fetch_k,
             lambda_mult=lambda_mult,
-            has_filter=kwargs.get("filter") is not None
+            has_filter=kwargs.get("filter") is not None,
         )
 
         with operation_context("mmr_search", top_k=k, fetch_k=fetch_k):
@@ -1114,7 +1090,7 @@ class ZeusDBVectorStore(_LCVectorStore):
                         "MMR search: candidates <= k, returning all",
                         operation="mmr_search",
                         candidates_count=len(candidates),
-                        requested_k=k
+                        requested_k=k,
                     )
                     return [d for d, _, _ in candidates]
 
@@ -1139,7 +1115,7 @@ class ZeusDBVectorStore(_LCVectorStore):
                         if doc_vec is None:
                             doc_vec = self._embed_doc_text(doc.page_content)
 
-                        # Diversity: min cosine distance to any already selected doc, 
+                        # Diversity: min cosine distance to any already selected doc,
                         # normalize [0,2] -> [0,1]
                         min_div01 = float("inf")
                         for _, sel_vec in selected:
@@ -1163,9 +1139,7 @@ class ZeusDBVectorStore(_LCVectorStore):
 
                     selected.append((best_doc, best_vec))
                     remaining = [
-                        (d, s, v) 
-                        for d, s, v in remaining 
-                        if d.id != best_doc.id
+                        (d, s, v) for d, s, v in remaining if d.id != best_doc.id
                     ]
 
                 mmr_ms = (perf_counter() - t2) * 1000
@@ -1180,7 +1154,7 @@ class ZeusDBVectorStore(_LCVectorStore):
                     search_ms=search_ms,
                     mmr_ms=mmr_ms,
                     top_k=k,
-                    fetch_k=fetch_k
+                    fetch_k=fetch_k,
                 )
 
                 return result_docs
@@ -1196,7 +1170,7 @@ class ZeusDBVectorStore(_LCVectorStore):
                     search_ms=search_ms,
                     error=str(e),
                     error_type=type(e).__name__,
-                    exc_info=True
+                    exc_info=True,
                 )
                 return []
 
@@ -1213,8 +1187,7 @@ class ZeusDBVectorStore(_LCVectorStore):
             return self.similarity_search_by_vector(embedding, k=k, **kwargs)
 
         vec = self._coerce_vector(
-            embedding, 
-            where="max_marginal_relevance_search_by_vector"
+            embedding, where="max_marginal_relevance_search_by_vector"
         )
         if vec is None:
             return []
@@ -1226,7 +1199,7 @@ class ZeusDBVectorStore(_LCVectorStore):
             top_k=k,
             fetch_k=fetch_k,
             lambda_mult=lambda_mult,
-            has_filter=kwargs.get("filter") is not None
+            has_filter=kwargs.get("filter") is not None,
         )
 
         with operation_context("mmr_search_by_vector", top_k=k, fetch_k=fetch_k):
@@ -1293,9 +1266,7 @@ class ZeusDBVectorStore(_LCVectorStore):
 
                     selected.append((best_doc, best_vec))
                     remaining = [
-                        (d, s, v) 
-                        for d, s, v in remaining 
-                        if d.id != best_doc.id
+                        (d, s, v) for d, s, v in remaining if d.id != best_doc.id
                     ]
 
                 mmr_ms = (perf_counter() - t1) * 1000
@@ -1309,7 +1280,7 @@ class ZeusDBVectorStore(_LCVectorStore):
                     search_ms=search_ms,
                     mmr_ms=mmr_ms,
                     top_k=k,
-                    fetch_k=fetch_k
+                    fetch_k=fetch_k,
                 )
 
                 return result_docs
@@ -1324,7 +1295,7 @@ class ZeusDBVectorStore(_LCVectorStore):
                     search_ms=search_ms,
                     error=str(e),
                     error_type=type(e).__name__,
-                    exc_info=True
+                    exc_info=True,
                 )
                 return []
 
@@ -1334,13 +1305,13 @@ class ZeusDBVectorStore(_LCVectorStore):
     @classmethod
     def from_texts(
         cls,
-        texts: Iterable[str], 
+        texts: Iterable[str],
         embedding: Embeddings,
         metadatas: Optional[List[Dict]] = None,
         *,
         ids: Optional[List[str]] = None,
         zeusdb_index: Optional[Any] = None,
-        validate_dims: bool = True, 
+        validate_dims: bool = True,
         **kwargs: Any,
     ) -> "ZeusDBVectorStore":
         """Create VectorStore from texts."""
@@ -1355,7 +1326,7 @@ class ZeusDBVectorStore(_LCVectorStore):
             operation="from_texts",
             text_count=len(texts_list),
             has_existing_index=zeusdb_index is not None,
-            validate_dims=validate_dims
+            validate_dims=validate_dims,
         )
 
         # Determine embedding dimension from a cheap single embed
@@ -1370,7 +1341,7 @@ class ZeusDBVectorStore(_LCVectorStore):
                     "Index dimension mismatch",
                     operation="from_texts",
                     embedding_dim=dim,
-                    index_dim=idx_dim
+                    index_dim=idx_dim,
                 )
                 raise ValueError(
                     f"Embedding dimension ({dim}) does not match "
@@ -1384,9 +1355,9 @@ class ZeusDBVectorStore(_LCVectorStore):
                 operation="from_texts",
                 dim=dim,
                 index_type=kwargs.get("index_type", "hnsw"),
-                space=kwargs.get("space", "cosine")
+                space=kwargs.get("space", "cosine"),
             )
-            
+
             vdb = VectorDatabase()
             zeusdb_index = vdb.create(
                 index_type=kwargs.get("index_type", "hnsw"),
@@ -1395,41 +1366,34 @@ class ZeusDBVectorStore(_LCVectorStore):
                 m=kwargs.get("m", 16),
                 ef_construction=kwargs.get("ef_construction", 200),
                 expected_size=kwargs.get(
-                    "expected_size", 
-                    max(
-                        10000, 
-                        len(texts_list) * 2
-                    )
+                    "expected_size", max(10000, len(texts_list) * 2)
                 ),
                 quantization_config=kwargs.get("quantization_config"),
             )
-            
+
         # Validate a small sample of document embeddings match `dim`
         if validate_dims:
             logger.debug(
                 "Validating embedding dimensions",
                 operation="from_texts",
-                expected_dim=dim
+                expected_dim=dim,
             )
             cls._validate_embedding_dims(embedding, texts_list, expected_dim=dim)
 
         store = cls(
-            zeusdb_index=zeusdb_index, 
-            embedding=embedding, 
-            text_key=kwargs.get(
-                "text_key", 
-                "text"
-            )
+            zeusdb_index=zeusdb_index,
+            embedding=embedding,
+            text_key=kwargs.get("text_key", "text"),
         )
         if texts_list:
             store.add_texts(texts_list, metadatas, ids=ids)
-        
+
         logger.info(
             "ZeusDB VectorStore from texts completed",
             operation="from_texts",
-            final_text_count=len(texts_list)
+            final_text_count=len(texts_list),
         )
-        
+
         return store
 
     @classmethod
@@ -1446,7 +1410,7 @@ class ZeusDBVectorStore(_LCVectorStore):
             "Creating ZeusDB VectorStore from documents",
             operation="from_documents",
             doc_count=len(documents),
-            has_existing_index=zeusdb_index is not None
+            has_existing_index=zeusdb_index is not None,
         )
 
         texts = [d.page_content for d in documents]
@@ -1479,27 +1443,17 @@ class ZeusDBVectorStore(_LCVectorStore):
     ) -> List[str]:
         """Async version of add_texts."""
         return await run_in_executor(
-            None, 
-            self.add_texts, 
-            texts, 
-            metadatas, 
-            ids=ids, 
-            **kwargs
+            None, self.add_texts, texts, metadatas, ids=ids, **kwargs
         )
 
     async def aadd_documents(
-            self, 
-            documents: List[Document], 
-            **kwargs: Any
+        self, documents: List[Document], **kwargs: Any
     ) -> List[str]:
         """Async version of add_documents."""
         return await run_in_executor(None, self.add_documents, documents, **kwargs)
 
     async def asimilarity_search(
-            self, 
-            query: str, 
-            k: int = 4, 
-            **kwargs: Any
+        self, query: str, k: int = 4, **kwargs: Any
     ) -> List[Document]:
         """Async version of similarity_search."""
         return await run_in_executor(None, self.similarity_search, query, k=k, **kwargs)
@@ -1509,11 +1463,7 @@ class ZeusDBVectorStore(_LCVectorStore):
     ) -> List[Tuple[Document, float]]:
         """Async version of similarity_search_with_score."""
         return await run_in_executor(
-            None, 
-            self.similarity_search_with_score, 
-            query, 
-            k=k, 
-            **kwargs
+            None, self.similarity_search_with_score, query, k=k, **kwargs
         )
 
     async def asimilarity_search_with_relevance_scores(
@@ -1521,11 +1471,7 @@ class ZeusDBVectorStore(_LCVectorStore):
     ) -> List[Tuple[Document, float]]:
         """Async version of similarity_search_with_relevance_scores."""
         return await run_in_executor(
-            None, 
-            self.similarity_search_with_relevance_scores, 
-            query, 
-            k=k, 
-            **kwargs
+            None, self.similarity_search_with_relevance_scores, query, k=k, **kwargs
         )
 
     async def asimilarity_search_by_vector(
@@ -1536,11 +1482,7 @@ class ZeusDBVectorStore(_LCVectorStore):
     ) -> List[Document]:
         """Async version of similarity_search_by_vector."""
         return await run_in_executor(
-            None, 
-            self.similarity_search_by_vector, 
-            embedding, 
-            k=k, 
-            **kwargs
+            None, self.similarity_search_by_vector, embedding, k=k, **kwargs
         )
 
     async def aget_by_ids(self, ids: Sequence[str]) -> List[Document]:
@@ -1548,19 +1490,17 @@ class ZeusDBVectorStore(_LCVectorStore):
         return await run_in_executor(None, self.get_by_ids, ids)
 
     async def adelete(
-            self, 
-            ids: Optional[List[str]] = None, 
-            **kwargs: Any
+        self, ids: Optional[List[str]] = None, **kwargs: Any
     ) -> Optional[bool]:
         """Async version of delete."""
         return await run_in_executor(None, self.delete, ids, **kwargs)
 
     async def amax_marginal_relevance_search(
-        self, 
-        query: str, 
-        k: int = 4, 
-        fetch_k: int = 20, 
-        lambda_mult: float = 0.5, 
+        self,
+        query: str,
+        k: int = 4,
+        fetch_k: int = 20,
+        lambda_mult: float = 0.5,
         **kwargs: Any
     ) -> List[Document]:
         """Async version of max_marginal_relevance_search."""
@@ -1603,7 +1543,7 @@ class ZeusDBVectorStore(_LCVectorStore):
             logger.debug(
                 "Retrieved ZeusDB stats",
                 operation="get_zeusdb_stats",
-                stats_keys=list(stats.keys()) if stats else []
+                stats_keys=list(stats.keys()) if stats else [],
             )
             return stats
         except Exception as e:
@@ -1612,7 +1552,7 @@ class ZeusDBVectorStore(_LCVectorStore):
                 operation="get_zeusdb_stats",
                 error=str(e),
                 error_type=type(e).__name__,
-                exc_info=True
+                exc_info=True,
             )
             return {}
 
@@ -1623,7 +1563,7 @@ class ZeusDBVectorStore(_LCVectorStore):
             logger.debug(
                 "Retrieved quantization info",
                 operation="get_quantization_info",
-                has_quantization=info is not None
+                has_quantization=info is not None,
             )
             return info
         except Exception as e:
@@ -1632,7 +1572,7 @@ class ZeusDBVectorStore(_LCVectorStore):
                 operation="get_quantization_info",
                 error=str(e),
                 error_type=type(e).__name__,
-                exc_info=True
+                exc_info=True,
             )
             return None
 
@@ -1658,18 +1598,12 @@ class ZeusDBVectorStore(_LCVectorStore):
 
     def save_index(self, path: str) -> bool:
         """Save ZeusDB index to disk with complete state preservation."""
-        logger.info(
-            "Saving ZeusDB index",
-            operation="save_index",
-            path=path
-        )
-        
+        logger.info("Saving ZeusDB index", operation="save_index", path=path)
+
         try:
             self.zeusdb_index.save(path)
             logger.info(
-                "ZeusDB index saved successfully",
-                operation="save_index",
-                path=path
+                "ZeusDB index saved successfully", operation="save_index", path=path
             )
             return True
         except Exception as e:
@@ -1679,7 +1613,7 @@ class ZeusDBVectorStore(_LCVectorStore):
                 path=path,
                 error=str(e),
                 error_type=type(e).__name__,
-                exc_info=True
+                exc_info=True,
             )
             return False
 
@@ -1694,11 +1628,7 @@ class ZeusDBVectorStore(_LCVectorStore):
         # from .vector_database import VectorDatabase
         from zeusdb import VectorDatabase  # Use mega package
 
-        logger.info(
-            "Loading ZeusDB index",
-            operation="load_index",
-            path=path
-        )
+        logger.info("Loading ZeusDB index", operation="load_index", path=path)
 
         try:
             vdb = VectorDatabase()
@@ -1711,21 +1641,21 @@ class ZeusDBVectorStore(_LCVectorStore):
                 text_key=text_key,
                 **kwargs,
             )
-            
+
             logger.info(
                 "ZeusDB index loaded successfully",
                 operation="load_index",
                 path=path,
-                vector_count=store.get_vector_count()
+                vector_count=store.get_vector_count(),
             )
-            
+
             return store
         except Exception as e:
             logger.error(
                 "Failed to load ZeusDB index",
                 operation="load_index",
                 path=path,
-                exc_info=True
+                exc_info=True,
             )
             raise RuntimeError(f"Failed to load ZeusDB index from {path}: {e}") from e
 
@@ -1739,13 +1669,12 @@ class ZeusDBVectorStore(_LCVectorStore):
             "Starting search performance benchmark",
             operation="benchmark_search_performance",
             query_count=query_count,
-            max_threads=max_threads
+            max_threads=max_threads,
         )
-        
+
         try:
             results = self.zeusdb_index.benchmark_concurrent_reads(
-                query_count, 
-                max_threads
+                query_count, max_threads
             )
             logger.info(
                 "Search performance benchmark completed",
@@ -1753,7 +1682,7 @@ class ZeusDBVectorStore(_LCVectorStore):
                 query_count=query_count,
                 sequential_qps=results.get("sequential_qps", 0),
                 parallel_qps=results.get("parallel_qps", 0),
-                speedup=results.get("speedup", 0)
+                speedup=results.get("speedup", 0),
             )
             return results
         except Exception as e:
@@ -1763,7 +1692,7 @@ class ZeusDBVectorStore(_LCVectorStore):
                 query_count=query_count,
                 error=str(e),
                 error_type=type(e).__name__,
-                exc_info=True
+                exc_info=True,
             )
             return {}
 
@@ -1772,9 +1701,7 @@ class ZeusDBVectorStore(_LCVectorStore):
         try:
             count = self.zeusdb_index.get_vector_count()
             logger.debug(
-                "Retrieved vector count",
-                operation="get_vector_count",
-                count=count
+                "Retrieved vector count", operation="get_vector_count", count=count
             )
             return count
         except Exception as e:
@@ -1783,7 +1710,7 @@ class ZeusDBVectorStore(_LCVectorStore):
                 operation="get_vector_count",
                 error=str(e),
                 error_type=type(e).__name__,
-                exc_info=True
+                exc_info=True,
             )
             return 0
 
@@ -1794,7 +1721,7 @@ class ZeusDBVectorStore(_LCVectorStore):
             logger.debug(
                 "Retrieved training progress",
                 operation="get_training_progress",
-                progress_percent=progress
+                progress_percent=progress,
             )
             return progress
         except Exception as e:
@@ -1803,7 +1730,7 @@ class ZeusDBVectorStore(_LCVectorStore):
                 operation="get_training_progress",
                 error=str(e),
                 error_type=type(e).__name__,
-                exc_info=True
+                exc_info=True,
             )
             return 0.0
 
@@ -1814,7 +1741,7 @@ class ZeusDBVectorStore(_LCVectorStore):
             logger.debug(
                 "Retrieved quantization status",
                 operation="is_quantized",
-                is_quantized=quantized
+                is_quantized=quantized,
             )
             return quantized
         except Exception as e:
@@ -1823,7 +1750,7 @@ class ZeusDBVectorStore(_LCVectorStore):
                 operation="is_quantized",
                 error=str(e),
                 error_type=type(e).__name__,
-                exc_info=True
+                exc_info=True,
             )
             return False
 
@@ -1834,7 +1761,7 @@ class ZeusDBVectorStore(_LCVectorStore):
             logger.debug(
                 "Retrieved quantization availability",
                 operation="can_use_quantization",
-                can_use_quantization=available
+                can_use_quantization=available,
             )
             return available
         except Exception as e:
@@ -1843,7 +1770,7 @@ class ZeusDBVectorStore(_LCVectorStore):
                 operation="can_use_quantization",
                 error=str(e),
                 error_type=type(e).__name__,
-                exc_info=True
+                exc_info=True,
             )
             return False
 
@@ -1854,7 +1781,7 @@ class ZeusDBVectorStore(_LCVectorStore):
             logger.debug(
                 "Retrieved storage mode",
                 operation="get_storage_mode",
-                storage_mode=mode
+                storage_mode=mode,
             )
             return mode
         except Exception as e:
@@ -1863,7 +1790,7 @@ class ZeusDBVectorStore(_LCVectorStore):
                 operation="get_storage_mode",
                 error=str(e),
                 error_type=type(e).__name__,
-                exc_info=True
+                exc_info=True,
             )
             return "unknown"
 
@@ -1872,17 +1799,11 @@ class ZeusDBVectorStore(_LCVectorStore):
         try:
             info_str = self.zeusdb_index.info()
             logger.debug(
-                "Retrieved index info",
-                operation="info",
-                info_length=len(info_str)
+                "Retrieved index info", operation="info", info_length=len(info_str)
             )
             return info_str
         except Exception as e:
-            logger.error(
-                "Failed to get index info",
-                operation="info",
-                exc_info=True
-            )
+            logger.error("Failed to get index info", operation="info", exc_info=True)
             return f"ZeusDBVectorStore(error: {e})"
 
 
@@ -1914,15 +1835,14 @@ def get_langchain_requirements() -> List[str]:
 
 def create_zeusdb_vectorstore(
     texts: Optional[List[str]] = None,
-    documents: Optional[List[Document]] = None, 
+    documents: Optional[List[Document]] = None,
     embedding: Optional[Embeddings] = None,
     **zeusdb_kwargs: Any,
 ) -> ZeusDBVectorStore:
     """Convenience function to create ZeusDB vector store."""
     if embedding is None:
         logger.error(
-            "Missing embedding function",
-            operation="create_zeusdb_vectorstore"
+            "Missing embedding function", operation="create_zeusdb_vectorstore"
         )
         raise ValueError("embedding function is required")
 
@@ -1932,7 +1852,7 @@ def create_zeusdb_vectorstore(
         has_texts=texts is not None,
         has_documents=documents is not None,
         text_count=len(texts) if texts else 0,
-        doc_count=len(documents) if documents else 0
+        doc_count=len(documents) if documents else 0,
     )
 
     if documents is not None:
