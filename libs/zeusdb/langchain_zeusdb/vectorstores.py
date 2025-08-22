@@ -14,18 +14,21 @@ Features:
 - ZeusDB-specific features (quantization, persistence, stats)
 
 Usage:
-    >>> from langchain-zeusdb import ZeusDBVectorStore  # Updated import
+    >>> from langchain_zeusdb import ZeusDBVectorStore
     >>> from zeusdb import VectorDatabase
-    >>> from langchain-openai import OpenAIEmbeddings
+    >>> from langchain_openai import OpenAIEmbeddings
+    >>> from langchain_core.documents import Document
     >>>
     >>> vdb = VectorDatabase()
-    >>> index = vdb.create("hnsw", dim=1536, space="cosine")
+    >>> index = vdb.create(index_type="hnsw", dim=1536, space="cosine")
     >>>
     >>> vectorstore = ZeusDBVectorStore(
     ...     zeusdb_index=index,
     ...     embedding=OpenAIEmbeddings()
     ... )
-    >>> docs = vectorstore.similarity_search("hello world", k=5)
+    >>> docs = [Document(page_content="hello world", metadata={})]
+    >>> vectorstore.add_documents(docs)
+    >>> results = vectorstore.similarity_search("hello world", k=5)
     >>> retriever = vectorstore.as_retriever(search_type="mmr")
 """
 

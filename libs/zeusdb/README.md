@@ -51,11 +51,27 @@ A high-performance LangChain integration for ZeusDB, bringing enterprise-grade v
 pip install -qU langchain-zeusdb
 ```
 
+### Getting Started
+
+This example uses *OpenAIEmbeddings*, which requires an OpenAI API key - [Get your OpenAI API key here](https://platform.openai.com/api-keys)
+
+If you prefer, you can also use this package with any other embedding provider (Hugging Face, Cohere, custom functions, etc.).
+```bash
+pip install langchain-openai
+```
+
+```python
+import os
+import getpass
+
+os.environ['OPENAI_API_KEY'] = getpass.getpass('OpenAI API Key:')
+```
+
 ### Basic Usage
 
 ```python
-from langchain-zeusdb import ZeusDBVectorStore
-from langchain-openai import OpenAIEmbeddings
+from langchain_zeusdb import ZeusDBVectorStore
+from langchain_openai import OpenAIEmbeddings
 from zeusdb import VectorDatabase
 
 # Initialize embeddings
@@ -87,27 +103,79 @@ vector_store.add_documents(docs)
 
 # Search
 results = vector_store.similarity_search("fast database", k=2)
-print(f"Found {len(results)} results")
+print(f"Found the following {len(results)} results:")
+print(results)
 ```
+
+**Expected results:**
+```
+Found the following 2 results:
+[Document(id='ea2b4f13-b0b7-4cef-bb91-0fc4f4c41295', metadata={'source': 'docs'}, page_content='ZeusDB is fast'), Document(id='33dc1e87-a18a-4827-a0df-6ee47eabc7b2', metadata={'source': 'docs'}, page_content='LangChain is powerful')]
+```
+
+<br />
 
 ### Factory Methods
 
+For convenience, you can create and populate a vector store in a single step:
+
+**Example 1: - Create from texts (creates index and adds texts in one step)**
 ```python
-# Create from texts
-vector_store = ZeusDBVectorStore.from_texts(
+vector_store_texts = ZeusDBVectorStore.from_texts(
     texts=["Hello world", "Goodbye world"],
     embedding=embeddings,
     metadatas=[{"source": "text1"}, {"source": "text2"}]
 )
 
-# Create from documents
-vector_store = ZeusDBVectorStore.from_documents(
-    documents=docs,
-    embedding=embeddings
-)
+print("texts store count:", vector_store_texts.get_vector_count())         # -> 2
+print("texts store peek:", vector_store_texts.zeusdb_index.list(2))        # [('id1', {...}), ('id2', {...})]
+
+# Search the texts-based store
+results = vector_store_texts.similarity_search("Hello", k=1)
+print(f"Found in texts store: {results[0].page_content}")                  # -> "Hello world"
 ```
 
+**Expected results:**
+```
+texts store count: 2
+texts store peek: [('e9c39b44-b610-4e00-91f3-bf652e9989ac', {'source': 'text1', 'text': 'Hello world'}), ('d33f210c-ed53-4006-a64a-a9eee397fec9', {'source': 'text2', 'text': 'Goodbye world'})]
+Found in texts store: Hello world
+```
+
+<br />
+
+**Example 2: - Create from documents (creates index and adds documents in one step)**
+```python
+new_docs = [
+    Document(page_content="Python is great", metadata={"source": "python"}),
+    Document(page_content="JavaScript is flexible", metadata={"source": "js"}),
+]
+
+vector_store_docs = ZeusDBVectorStore.from_documents(
+    documents=new_docs,
+    embedding=embeddings
+)
+
+print("docs store count:", vector_store_docs.get_vector_count())           # -> 2
+print("docs store peek:", vector_store_docs.zeusdb_index.list(2))          # [('id3', {...}), ('id4', {...})]
+
+# Search the documents-based store
+results = vector_store_docs.similarity_search("Python", k=1)
+print(f"Found in docs store: {results[0].page_content}")                   # -> "Python is great"
+```
+
+**Expected results:**
+```
+docs store count: 2
+docs store peek: [('aab2d1c1-7e02-4817-8dd8-6fb03570bb6f', {'text': 'Python is great', 'source': 'python'}), ('9a8a82cb-0e70-456c-9db2-556e464de14e', {'text': 'JavaScript is flexible', 'source': 'js'})]
+Found in docs store: Python is great
+```
+
+<br />
+
 ## Advanced Features
+
+ZeusDB's enterprise-grade capabilities are fully integrated into the LangChain ecosystem, providing quantization, persistence, advanced search features and many other enterprise capabilities.
 
 ### Memory-Efficient Setup with Quantization
 
@@ -136,38 +204,99 @@ vector_store = ZeusDBVectorStore(
 )
 ```
 
+Please refer to our [documentation](https://docs.zeusdb.com/en/latest/vector_database/product_quantization.html) for helpful configuration guidelines and recommendations for setting up quantization.
+
+<br />
+
 ### Persistence
 
-Save and load your vector store:
+ZeusDB persistence lets you save a fully populated index to disk and load it later with complete state restoration. This includes vectors, metadata, HNSW graph, and (if enabled) Product Quantization models.
 
+What gets saved:
+ - Vectors & IDs
+ -  Metadata
+ - HNSW graph structure
+ - Quantization config, centroids, and training state (if PQ is enabled)
+
+
+**How to Save your vector store**
 ```python
 # Save index
 vector_store.save_index("my_index.zdb")
+```
 
+**How to Load your vector store**
+```python
 # Load index
 loaded_store = ZeusDBVectorStore.load_index(
     path="my_index.zdb",
     embedding=embeddings
 )
+
+# Verify after load
+print("vector count:", loaded_store.get_vector_count())
+print("index info:", loaded_store.info())
+print("store peek:", loaded_store.zeusdb_index.list(2))
 ```
+
+**Notes**
+ - The path is a directory, not a single file. Ensure the target is writable.
+ - Saved indexes are cross-platform and include format/version info for compatibility checks.
+ - If you used PQ, both the compression model and state are preserved—no need to retrain after loading.
+ - You can continue to use all vector store APIs (similarity_search, retrievers, etc.) on the loaded_store.
+
+For further details (including file structure, and further comprehensive examples), see the [documentation](https://docs.zeusdb.com/en/latest/vector_database/persistence.html).
+
+<br />
 
 ### Advanced Search Options
 
+Use these to control scoring, diversity, metadata filtering, and retriever integration for your searches.
+
+#### Similarity search with scores
+
+Returns `(Document, raw_distance)` pairs from ZeusDB — **lower distance = more similar**.  
+If you prefer normalized relevance in `[0, 1]`, use `similarity_search_with_relevance_scores`.
+
 ```python
 # Similarity search with scores
-results = vector_store.similarity_search_with_score(
+results_with_scores = vector_store.similarity_search_with_score(
     query="machine learning",
     k=5
 )
 
+print(results_with_scores)
+```
+
+**Expected results:**
+```
+[
+  (Document(id='ac0eaf5b-9f02-4ce2-8957-c369a7262c61', metadata={'source': 'docs'}, page_content='LangChain is powerful'), 0.8218843340873718),
+  (Document(id='faae3adf-7cf3-463c-b282-3790b096fa23', metadata={'source': 'docs'}, page_content='ZeusDB is fast'), 0.9140053391456604)
+]
+```
+
+#### MMR search for diversity
+
+MMR (Maximal Marginal Relevance) balances two forces: relevance to the query and diversity among selected results, reducing near-duplicate answers. Control the trade-off with lambda_mult (1.0 = all relevance, 0.0 = all diversity).
+
+```python
 # MMR search for diversity
-results = vector_store.max_marginal_relevance_search(
+mmr_results = vector_store.max_marginal_relevance_search(
     query="AI applications",
     k=5,
     fetch_k=20,
     lambda_mult=0.7  # Balance relevance vs diversity
 )
 
+print(mmr_results)
+```
+
+#### Search with metadata filtering
+
+Filter results using document metadata you stored when adding docs
+
+```python
 # Search with metadata filtering
 results = vector_store.similarity_search(
     query="database performance",
@@ -176,7 +305,11 @@ results = vector_store.similarity_search(
 )
 ```
 
-### As a Retriever
+For supported metadata query types and operators, please refer to the [documentation](https://docs.zeusdb.com/en/latest/vector_database/metadata_filtering.html).
+
+#### As a Retriever
+
+Turning the vector store into a retriever gives you a standard LangChain interface that chains (e.g., RetrievalQA) can call to fetch context. Under the hood it uses your chosen search type (similarity or mmr) and search_kwargs.
 
 ```python
 # Convert to retriever for use in chains
@@ -185,28 +318,159 @@ retriever = vector_store.as_retriever(
     search_kwargs={"k": 3, "lambda_mult": 0.8}
 )
 
-# Use in a chain
-from langchain.chains import RetrievalQA
+# Use with LangChain Expression Language (LCEL) - requires only langchain-core
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.runnables import RunnablePassthrough
 from langchain_openai import ChatOpenAI
 
-qa_chain = RetrievalQA.from_chain_type(
-    llm=ChatOpenAI(),
-    retriever=retriever
+def format_docs(docs):
+    return "\n\n".join([d.page_content for d in docs])
+
+template = """Answer the question based only on the following context:
+{context}
+
+Question: {question}
+"""
+
+prompt = ChatPromptTemplate.from_template(template)
+llm = ChatOpenAI()
+
+# Create a chain using LCEL
+chain = (
+    {"context": retriever | format_docs, "question": RunnablePassthrough()}
+    | prompt
+    | llm
+    | StrOutputParser()
 )
 
-answer = qa_chain.run("What is ZeusDB?")
+# Use the chain
+answer = chain.invoke("What is ZeusDB?")
+print(answer)
 ```
+
+**Expected results:**
+```
+ZeusDB is a fast database management system.
+```
+
+<br />
 
 ## Async Support
 
-All operations support async/await:
+ZeusDB supports asynchronous operations for non-blocking, concurrent vector operations.
+
+**When to use async:** web servers (FastAPI/Starlette), agents/pipelines doing parallel searches, or notebooks where you want non-blocking/concurrent retrieval. If you're writing simple scripts, the sync methods are fine.
+
+Those are **asynchronous operations** - the async/await versions of the regular synchronous methods. Here's what each one does:
+
+1. `await vector_store.aadd_documents(documents)` - Asynchronously adds documents to the vector store (async version of `add_documents()`)
+2. `await vector_store.asimilarity_search("query", k=5)` - Asynchronously performs similarity search (async version of `similarity_search()`)
+3. `await vector_store.adelete(ids=["doc1", "doc2"])` - Asynchronously deletes documents by their IDs (async version of `delete()`)
+
+The async versions are useful when:
+- You're building async applications (using `asyncio`, FastAPI, etc.)
+- You want non-blocking operations that can run concurrently
+- You're handling multiple requests simultaneously
+- You want better performance in I/O-bound applications
+
+For example, instead of blocking while adding documents:
 
 ```python
-# Async operations
-await vector_store.aadd_documents(documents)
-results = await vector_store.asimilarity_search("query", k=5)
-await vector_store.adelete(ids=["doc1", "doc2"])
+# Synchronous (blocking)
+vector_store.add_documents(docs)  # Blocks until complete
+
+# Asynchronous (non-blocking) 
+await vector_store.aadd_documents(docs)  # Can do other work while this runs
 ```
+
+All operations support async/await:
+
+**Script version (`python my_script.py`):**
+```python
+import asyncio
+from langchain_zeusdb import ZeusDBVectorStore
+from langchain_openai import OpenAIEmbeddings
+from langchain_core.documents import Document
+from zeusdb import VectorDatabase
+
+# Setup
+embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
+vdb = VectorDatabase()
+index = vdb.create(index_type="hnsw", dim=1536, space="cosine")
+vector_store = ZeusDBVectorStore(zeusdb_index=index, embedding=embeddings)
+
+docs = [
+    Document(page_content="ZeusDB is fast", metadata={"source": "docs"}),
+    Document(page_content="LangChain is powerful", metadata={"source": "docs"}),
+]
+
+async def main():
+    # Add documents asynchronously
+    ids = await vector_store.aadd_documents(docs)
+    print("Added IDs:", ids)
+    
+    # Run multiple searches concurrently
+    results_fast, results_powerful = await asyncio.gather(
+        vector_store.asimilarity_search("fast", k=2),
+        vector_store.asimilarity_search("powerful", k=2),
+    )
+    print("Fast results:", [d.page_content for d in results_fast])
+    print("Powerful results:", [d.page_content for d in results_powerful])
+    
+    # Delete documents asynchronously
+    deleted = await vector_store.adelete(ids=ids[:1])
+    print("Deleted first doc:", deleted)
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
+**Colab/Notebook/Jupyter version (top-level `await`):**
+```python
+from langchain_zeusdb import ZeusDBVectorStore
+from langchain_openai import OpenAIEmbeddings
+from langchain_core.documents import Document
+from zeusdb import VectorDatabase
+import asyncio
+
+# Setup
+embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
+vdb = VectorDatabase()
+index = vdb.create(index_type="hnsw", dim=1536, space="cosine")
+vector_store = ZeusDBVectorStore(zeusdb_index=index, embedding=embeddings)
+
+docs = [
+    Document(page_content="ZeusDB is fast", metadata={"source": "docs"}),
+    Document(page_content="LangChain is powerful", metadata={"source": "docs"}),
+]
+
+# Add documents asynchronously
+ids = await vector_store.aadd_documents(docs)
+print("Added IDs:", ids)
+
+# Run multiple searches concurrently
+results_fast, results_powerful = await asyncio.gather(
+    vector_store.asimilarity_search("fast", k=2),
+    vector_store.asimilarity_search("powerful", k=2),
+)
+print("Fast results:", [d.page_content for d in results_fast])
+print("Powerful results:", [d.page_content for d in results_powerful])
+
+# Delete documents asynchronously
+deleted = await vector_store.adelete(ids=ids[:1])
+print("Deleted first doc:", deleted)
+```
+
+**Expected results:**
+```
+Added IDs: ['9c440918-715f-49ba-9b97-0d991d29e997', 'ad59c645-d3ba-4a4a-a016-49ed39514123']
+Fast results: ['ZeusDB is fast', 'LangChain is powerful']
+Powerful results: ['LangChain is powerful', 'ZeusDB is fast']
+Deleted first doc: True
+```
+
+<br />
 
 ## Monitoring and Observability
 
@@ -215,37 +479,56 @@ await vector_store.adelete(ids=["doc1", "doc2"])
 ```python
 # Get index statistics
 stats = vector_store.get_zeusdb_stats()
-print(f"Index size: {stats.get('vector_count', 0)} vectors")
+print(f"Index size: {stats.get('total_vectors', '0')} vectors")
+print(f"Dimension: {stats.get('dimension')} | Space: {stats.get('space')} | Index type: {stats.get('index_type')}")
 
 # Benchmark search performance
 performance = vector_store.benchmark_search_performance(
     query_count=100,
     max_threads=4
 )
-print(f"Search QPS: {performance.get('parallel_qps', 0)}")
+print(f"Search QPS: {performance.get('parallel_qps', 0):.0f}")
 
 # Check quantization status
 if vector_store.is_quantized():
     progress = vector_store.get_training_progress()
     print(f"Quantization training: {progress:.1f}% complete")
+else:
+    print("Index is not quantized")
+```
+
+**Expected results:**
+```
+Index size: 2 vectors
+Dimension: 1536 | Space: cosine | Index type: HNSW
+Search QPS: 53807
+Index is not quantized
 ```
 
 ### Enterprise Logging
 
-The integration includes structured logging for production monitoring:
+ZeusDB includes enterprise-grade structured logging that works automatically with smart environment detection:
 
 ```python
 import logging
 
-# Configure logging to see performance metrics
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger("langchain_zeusdb")
+# ZeusDB automatically detects your environment and applies appropriate logging:
+# - Development: Human-readable logs, WARNING level
+# - Production: JSON structured logs, ERROR level  
+# - Testing: Minimal output, CRITICAL level
+# - Jupyter: Clean readable logs, INFO level
 
-# Operations are automatically logged with:
-# - Duration measurements
-# - Error context
-# - Operation metadata
+# Operations are automatically logged with performance metrics
+vector_store.add_documents(docs)
+# Logs: {"operation":"vector_addition","total_inserted":2,"duration_ms":45}
+
+# Control logging with environment variables if needed
+# ZEUSDB_LOG_LEVEL=debug ZEUSDB_LOG_FORMAT=json python your_app.py
 ```
+
+To learn more about the full features of ZeusDB's enterprise logging capabilities please read the following [documentation](https://docs.zeusdb.com/en/latest/vector_database/logging.html).
+
+<br />
 
 ## Configuration Options
 
@@ -282,6 +565,7 @@ The integration includes comprehensive error handling:
 ```python
 try:
     results = vector_store.similarity_search("query")
+    print(results)
 except Exception as e:
     # Graceful degradation with logging
     print(f"Search failed: {e}")
@@ -300,26 +584,6 @@ except Exception as e:
 git clone https://github.com/zeusdb/langchain-zeusdb.git
 cd langchain-zeusdb/libs/zeusdb
 pip install -e .
-```
-
-## Development
-
-```bash
-# Install with test dependencies
-pip install -e ".[test]"
-
-# Run tests
-pytest tests/
-
-# Run with coverage
-pytest tests/ --cov=langchain_zeusdb
-
-# Lint code
-ruff check .
-ruff format .
-
-# Type checking
-mypy .
 ```
 
 ## Performance Benchmarks
@@ -347,8 +611,6 @@ In internal benchmarks, ZeusDB has demonstrated exceptional performance for larg
 
 ### LangChain Versions
 - **LangChain Core**: 0.3.74+
-- **LangChain Community**: Compatible with all versions
-- **LangSmith**: Full tracing and monitoring support
 
 ### Distance Metrics
 - **Cosine**: Default, normalized similarity
@@ -366,7 +628,6 @@ Compatible with any embedding provider:
 
 - **Documentation**: [docs.zeusdb.com](https://docs.zeusdb.com)
 - **Issues**: [GitHub Issues](https://github.com/zeusdb/langchain-zeusdb/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/zeusdb/langchain-zeusdb/discussions)
 - **Email**: contact@zeusdb.com
 
 ## Contributing
