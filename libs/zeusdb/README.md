@@ -507,20 +507,26 @@ Index is not quantized
 
 ### Enterprise Logging
 
-The integration includes structured logging for production monitoring:
+ZeusDB includes enterprise-grade structured logging that works automatically with smart environment detection:
 
 ```python
 import logging
 
-# Configure logging to see performance metrics
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger("langchain_zeusdb")
+# ZeusDB automatically detects your environment and applies appropriate logging:
+# - Development: Human-readable logs, WARNING level
+# - Production: JSON structured logs, ERROR level  
+# - Testing: Minimal output, CRITICAL level
+# - Jupyter: Clean readable logs, INFO level
 
-# Operations are automatically logged with:
-# - Duration measurements
-# - Error context
-# - Operation metadata
+# Operations are automatically logged with performance metrics
+vector_store.add_documents(docs)
+# Logs: {"operation":"vector_addition","total_inserted":2,"duration_ms":45}
+
+# Control logging with environment variables if needed
+# ZEUSDB_LOG_LEVEL=debug ZEUSDB_LOG_FORMAT=json python your_app.py
 ```
+
+<br />
 
 ## Configuration Options
 
@@ -557,6 +563,7 @@ The integration includes comprehensive error handling:
 ```python
 try:
     results = vector_store.similarity_search("query")
+    print(results)
 except Exception as e:
     # Graceful degradation with logging
     print(f"Search failed: {e}")
@@ -575,26 +582,6 @@ except Exception as e:
 git clone https://github.com/zeusdb/langchain-zeusdb.git
 cd langchain-zeusdb/libs/zeusdb
 pip install -e .
-```
-
-## Development
-
-```bash
-# Install with test dependencies
-pip install -e ".[test]"
-
-# Run tests
-pytest tests/
-
-# Run with coverage
-pytest tests/ --cov=langchain_zeusdb
-
-# Lint code
-ruff check .
-ruff format .
-
-# Type checking
-mypy .
 ```
 
 ## Performance Benchmarks
@@ -622,8 +609,6 @@ In internal benchmarks, ZeusDB has demonstrated exceptional performance for larg
 
 ### LangChain Versions
 - **LangChain Core**: 0.3.74+
-- **LangChain Community**: Compatible with all versions
-- **LangSmith**: Full tracing and monitoring support
 
 ### Distance Metrics
 - **Cosine**: Default, normalized similarity
@@ -641,7 +626,6 @@ Compatible with any embedding provider:
 
 - **Documentation**: [docs.zeusdb.com](https://docs.zeusdb.com)
 - **Issues**: [GitHub Issues](https://github.com/zeusdb/langchain-zeusdb/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/zeusdb/langchain-zeusdb/discussions)
 - **Email**: contact@zeusdb.com
 
 ## Contributing
