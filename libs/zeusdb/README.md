@@ -358,14 +358,119 @@ ZeusDB is a fast database management system.
 
 ## Async Support
 
-All operations support async/await:
+ZeusDB supports asynchronous operations for non-blocking, concurrent vector operations.
+
+**When to use async:** web servers (FastAPI/Starlette), agents/pipelines doing parallel searches, or notebooks where you want non-blocking/concurrent retrieval. If you're writing simple scripts, the sync methods are fine.
+
+Those are **asynchronous operations** - the async/await versions of the regular synchronous methods. Here's what each one does:
+
+1. `await vector_store.aadd_documents(documents)` - Asynchronously adds documents to the vector store (async version of `add_documents()`)
+2. `await vector_store.asimilarity_search("query", k=5)` - Asynchronously performs similarity search (async version of `similarity_search()`)
+3. `await vector_store.adelete(ids=["doc1", "doc2"])` - Asynchronously deletes documents by their IDs (async version of `delete()`)
+
+The async versions are useful when:
+- You're building async applications (using `asyncio`, FastAPI, etc.)
+- You want non-blocking operations that can run concurrently
+- You're handling multiple requests simultaneously
+- You want better performance in I/O-bound applications
+
+For example, instead of blocking while adding documents:
 
 ```python
-# Async operations
-await vector_store.aadd_documents(documents)
-results = await vector_store.asimilarity_search("query", k=5)
-await vector_store.adelete(ids=["doc1", "doc2"])
+# Synchronous (blocking)
+vector_store.add_documents(docs)  # Blocks until complete
+
+# Asynchronous (non-blocking) 
+await vector_store.aadd_documents(docs)  # Can do other work while this runs
 ```
+
+All operations support async/await:
+
+**Script version (`python my_script.py`):**
+```python
+import asyncio
+from langchain_zeusdb import ZeusDBVectorStore
+from langchain_openai import OpenAIEmbeddings
+from langchain_core.documents import Document
+from zeusdb import VectorDatabase
+
+# Setup
+embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
+vdb = VectorDatabase()
+index = vdb.create(index_type="hnsw", dim=1536, space="cosine")
+vector_store = ZeusDBVectorStore(zeusdb_index=index, embedding=embeddings)
+
+docs = [
+    Document(page_content="ZeusDB is fast", metadata={"source": "docs"}),
+    Document(page_content="LangChain is powerful", metadata={"source": "docs"}),
+]
+
+async def main():
+    # Add documents asynchronously
+    ids = await vector_store.aadd_documents(docs)
+    print("Added IDs:", ids)
+    
+    # Run multiple searches concurrently
+    results_fast, results_powerful = await asyncio.gather(
+        vector_store.asimilarity_search("fast", k=2),
+        vector_store.asimilarity_search("powerful", k=2),
+    )
+    print("Fast results:", [d.page_content for d in results_fast])
+    print("Powerful results:", [d.page_content for d in results_powerful])
+    
+    # Delete documents asynchronously
+    deleted = await vector_store.adelete(ids=ids[:1])
+    print("Deleted first doc:", deleted)
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
+**Colab/Notebook/Jupyter version (top-level `await`):**
+```python
+from langchain_zeusdb import ZeusDBVectorStore
+from langchain_openai import OpenAIEmbeddings
+from langchain_core.documents import Document
+from zeusdb import VectorDatabase
+import asyncio
+
+# Setup
+embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
+vdb = VectorDatabase()
+index = vdb.create(index_type="hnsw", dim=1536, space="cosine")
+vector_store = ZeusDBVectorStore(zeusdb_index=index, embedding=embeddings)
+
+docs = [
+    Document(page_content="ZeusDB is fast", metadata={"source": "docs"}),
+    Document(page_content="LangChain is powerful", metadata={"source": "docs"}),
+]
+
+# Add documents asynchronously
+ids = await vector_store.aadd_documents(docs)
+print("Added IDs:", ids)
+
+# Run multiple searches concurrently
+results_fast, results_powerful = await asyncio.gather(
+    vector_store.asimilarity_search("fast", k=2),
+    vector_store.asimilarity_search("powerful", k=2),
+)
+print("Fast results:", [d.page_content for d in results_fast])
+print("Powerful results:", [d.page_content for d in results_powerful])
+
+# Delete documents asynchronously
+deleted = await vector_store.adelete(ids=ids[:1])
+print("Deleted first doc:", deleted)
+```
+
+**Expected results:**
+```
+Added IDs: ['9c440918-715f-49ba-9b97-0d991d29e997', 'ad59c645-d3ba-4a4a-a016-49ed39514123']
+Fast results: ['ZeusDB is fast', 'LangChain is powerful']
+Powerful results: ['LangChain is powerful', 'ZeusDB is fast']
+Deleted first doc: True
+```
+
+<br />
 
 ## Monitoring and Observability
 
