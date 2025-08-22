@@ -175,6 +175,8 @@ Found in docs store: Python is great
 
 ## Advanced Features
 
+ZeusDB's enterprise-grade capabilities are fully integrated into the LangChain ecosystem, providing quantization, persistence, advanced search features and many other enterprise capabilities.
+
 ### Memory-Efficient Setup with Quantization
 
 For large datasets, use Product Quantization to reduce memory usage:
@@ -201,6 +203,10 @@ vector_store = ZeusDBVectorStore(
     embedding=embeddings
 )
 ```
+
+Please refer to our [documentation](https://docs.zeusdb.com/en/latest/vector_database/product_quantization.html) for helpful configuration guidelines and recommendations for setting up quantization.
+
+<br />
 
 ### Persistence
 
