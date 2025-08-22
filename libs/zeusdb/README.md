@@ -210,18 +210,44 @@ Please refer to our [documentation](https://docs.zeusdb.com/en/latest/vector_dat
 
 ### Persistence
 
-Save and load your vector store:
+ZeusDB persistence lets you save a fully populated index to disk and load it later with complete state restoration. This includes vectors, metadata, HNSW graph, and (if enabled) Product Quantization models.
 
+What gets saved:
+ - Vectors & IDs
+ -  Metadata
+ - HNSW graph structure
+ - Quantization config, centroids, and training state (if PQ is enabled)
+
+
+**How to Save your vector store**
 ```python
 # Save index
 vector_store.save_index("my_index.zdb")
+```
 
+**How to Load your vector store**
+```python
 # Load index
 loaded_store = ZeusDBVectorStore.load_index(
     path="my_index.zdb",
     embedding=embeddings
 )
+
+# Verify after load
+print("vector count:", loaded_store.get_vector_count())
+print("index info:", loaded_store.info())
+print("store peek:", loaded_store.zeusdb_index.list(2))
 ```
+
+**Notes**
+ - The path is a directory, not a single file. Ensure the target is writable.
+ - Saved indexes are cross-platform and include format/version info for compatibility checks.
+ - If you used PQ, both the compression model and state are preserved—no need to retrain after loading.
+ - You can continue to use all vector store APIs (similarity_search, retrievers, etc.) on the loaded_store.
+
+For further details (including file structure, and further comprehensive examples), see the [documentation](https://docs.zeusdb.com/en/latest/vector_database/persistence.html).
+
+<br />
 
 ### Advanced Search Options
 
