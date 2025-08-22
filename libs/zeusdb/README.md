@@ -318,17 +318,43 @@ retriever = vector_store.as_retriever(
     search_kwargs={"k": 3, "lambda_mult": 0.8}
 )
 
-# Use in a chain
-from langchain.chains import RetrievalQA
+# Use with LangChain Expression Language (LCEL) - requires only langchain-core
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.runnables import RunnablePassthrough
 from langchain_openai import ChatOpenAI
 
-qa_chain = RetrievalQA.from_chain_type(
-    llm=ChatOpenAI(),
-    retriever=retriever
+def format_docs(docs):
+    return "\n\n".join([d.page_content for d in docs])
+
+template = """Answer the question based only on the following context:
+{context}
+
+Question: {question}
+"""
+
+prompt = ChatPromptTemplate.from_template(template)
+llm = ChatOpenAI()
+
+# Create a chain using LCEL
+chain = (
+    {"context": retriever | format_docs, "question": RunnablePassthrough()}
+    | prompt
+    | llm
+    | StrOutputParser()
 )
 
-answer = qa_chain.run("What is ZeusDB?")
+# Use the chain
+answer = chain.invoke("What is ZeusDB?")
+print(answer)
 ```
+
+**Expected results:**
+```
+ZeusDB is a fast database management system.
+```
+
+<br />
 
 ## Async Support
 
