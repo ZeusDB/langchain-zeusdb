@@ -113,22 +113,65 @@ Found the following 2 results:
 [Document(id='ea2b4f13-b0b7-4cef-bb91-0fc4f4c41295', metadata={'source': 'docs'}, page_content='ZeusDB is fast'), Document(id='33dc1e87-a18a-4827-a0df-6ee47eabc7b2', metadata={'source': 'docs'}, page_content='LangChain is powerful')]
 ```
 
+<br />
+
 ### Factory Methods
 
+For convenience, you can create and populate a vector store in a single step:
+
+**Example 1: - Create from texts (creates index and adds texts in one step)**
 ```python
-# Create from texts
-vector_store = ZeusDBVectorStore.from_texts(
+vector_store_texts = ZeusDBVectorStore.from_texts(
     texts=["Hello world", "Goodbye world"],
     embedding=embeddings,
     metadatas=[{"source": "text1"}, {"source": "text2"}]
 )
 
-# Create from documents
-vector_store = ZeusDBVectorStore.from_documents(
-    documents=docs,
+print("texts store count:", vector_store_texts.get_vector_count())         # -> 2
+print("texts store peek:", vector_store_texts.zeusdb_index.list(2))        # [('id1', {...}), ('id2', {...})]
+
+# Search the texts-based store
+results = vector_store_texts.similarity_search("Hello", k=1)
+print(f"Found in texts store: {results[0].page_content}")                  # -> "Hello world"
+```
+
+**Expected results:**
+```
+texts store count: 2
+texts store peek: [('e9c39b44-b610-4e00-91f3-bf652e9989ac', {'source': 'text1', 'text': 'Hello world'}), ('d33f210c-ed53-4006-a64a-a9eee397fec9', {'source': 'text2', 'text': 'Goodbye world'})]
+Found in texts store: Hello world
+```
+
+<br />
+
+**Example 2: - Create from documents (creates index and adds documents in one step)**
+```python
+new_docs = [
+    Document(page_content="Python is great", metadata={"source": "python"}),
+    Document(page_content="JavaScript is flexible", metadata={"source": "js"}),
+]
+
+vector_store_docs = ZeusDBVectorStore.from_documents(
+    documents=new_docs,
     embedding=embeddings
 )
+
+print("docs store count:", vector_store_docs.get_vector_count())           # -> 2
+print("docs store peek:", vector_store_docs.zeusdb_index.list(2))          # [('id3', {...}), ('id4', {...})]
+
+# Search the documents-based store
+results = vector_store_docs.similarity_search("Python", k=1)
+print(f"Found in docs store: {results[0].page_content}")                   # -> "Python is great"
 ```
+
+**Expected results:**
+```
+docs store count: 2
+docs store peek: [('aab2d1c1-7e02-4817-8dd8-6fb03570bb6f', {'text': 'Python is great', 'source': 'python'}), ('9a8a82cb-0e70-456c-9db2-556e464de14e', {'text': 'JavaScript is flexible', 'source': 'js'})]
+Found in docs store: Python is great
+```
+
+<br />
 
 ## Advanced Features
 
