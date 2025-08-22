@@ -10,16 +10,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.1.1] - 2025-08-22
 
 ### Added
-<!-- Add new features here -->
+- Getting Started section with optional OpenAI setup instructions
+- Comprehensive async examples for both Python scripts and Jupyter notebooks
+- Expected results sections for all code examples to help users verify correct behavior
+- Detailed persistence section explaining what gets saved (vectors, metadata, HNSW graph, quantization state)
+- Enhanced Advanced Search Options with MMR, metadata filtering, and retriever integration
+- Documentation links throughout for quantization, persistence, metadata filtering, and logging
+- Complete docstring usage example with all necessary imports
 
 ### Changed
-<!-- Add changed behavior here -->
+- Restructured README flow from installation → getting started → basic usage → advanced features
+- Updated "As a Retriever" section to use modern LCEL syntax with langchain-core only
+- Enhanced factory methods section to show they create and populate stores in one step
+- Updated enterprise logging section to accurately reflect ZeusDB's built-in capabilities rather than simple LangChain integration
 
 ### Fixed
-<!-- Add bug fixes here -->
+- Corrected stats API usage from `vector_count` to `total_vectors` key
+- Updated async examples to handle both script and notebook environments correctly
 
 ### Removed
-<!-- Add removals/deprecations here -->
+- Inaccurate enterprise logging description in README that suggested it was just a LangChain integration feature
 
 ---
 
