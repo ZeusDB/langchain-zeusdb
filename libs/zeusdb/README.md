@@ -251,21 +251,52 @@ For further details (including file structure, and further comprehensive example
 
 ### Advanced Search Options
 
+Use these to control scoring, diversity, metadata filtering, and retriever integration for your searches.
+
+#### Similarity search with scores
+
+Returns `(Document, raw_distance)` pairs from ZeusDB — **lower distance = more similar**.  
+If you prefer normalized relevance in `[0, 1]`, use `similarity_search_with_relevance_scores`.
+
 ```python
 # Similarity search with scores
-results = vector_store.similarity_search_with_score(
+results_with_scores = vector_store.similarity_search_with_score(
     query="machine learning",
     k=5
 )
 
+print(results_with_scores)
+```
+
+**Expected results:**
+```
+[
+  (Document(id='ac0eaf5b-9f02-4ce2-8957-c369a7262c61', metadata={'source': 'docs'}, page_content='LangChain is powerful'), 0.8218843340873718),
+  (Document(id='faae3adf-7cf3-463c-b282-3790b096fa23', metadata={'source': 'docs'}, page_content='ZeusDB is fast'), 0.9140053391456604)
+]
+```
+
+#### MMR search for diversity
+
+MMR (Maximal Marginal Relevance) balances two forces: relevance to the query and diversity among selected results, reducing near-duplicate answers. Control the trade-off with lambda_mult (1.0 = all relevance, 0.0 = all diversity).
+
+```python
 # MMR search for diversity
-results = vector_store.max_marginal_relevance_search(
+mmr_results = vector_store.max_marginal_relevance_search(
     query="AI applications",
     k=5,
     fetch_k=20,
     lambda_mult=0.7  # Balance relevance vs diversity
 )
 
+print(mmr_results)
+```
+
+#### Search with metadata filtering
+
+Filter results using document metadata you stored when adding docs
+
+```python
 # Search with metadata filtering
 results = vector_store.similarity_search(
     query="database performance",
@@ -274,7 +305,11 @@ results = vector_store.similarity_search(
 )
 ```
 
-### As a Retriever
+For supported metadata query types and operators, please refer to the [documentation](https://docs.zeusdb.com/en/latest/vector_database/metadata_filtering.html).
+
+#### As a Retriever
+
+Turning the vector store into a retriever gives you a standard LangChain interface that chains (e.g., RetrievalQA) can call to fetch context. Under the hood it uses your chosen search type (similarity or mmr) and search_kwargs.
 
 ```python
 # Convert to retriever for use in chains
