@@ -479,19 +479,30 @@ Deleted first doc: True
 ```python
 # Get index statistics
 stats = vector_store.get_zeusdb_stats()
-print(f"Index size: {stats.get('vector_count', 0)} vectors")
+print(f"Index size: {stats.get('total_vectors', '0')} vectors")
+print(f"Dimension: {stats.get('dimension')} | Space: {stats.get('space')} | Index type: {stats.get('index_type')}")
 
 # Benchmark search performance
 performance = vector_store.benchmark_search_performance(
     query_count=100,
     max_threads=4
 )
-print(f"Search QPS: {performance.get('parallel_qps', 0)}")
+print(f"Search QPS: {performance.get('parallel_qps', 0):.0f}")
 
 # Check quantization status
 if vector_store.is_quantized():
     progress = vector_store.get_training_progress()
     print(f"Quantization training: {progress:.1f}% complete")
+else:
+    print("Index is not quantized")
+```
+
+**Expected results:**
+```
+Index size: 2 vectors
+Dimension: 1536 | Space: cosine | Index type: HNSW
+Search QPS: 53807
+Index is not quantized
 ```
 
 ### Enterprise Logging
