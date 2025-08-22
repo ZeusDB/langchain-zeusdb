@@ -526,6 +526,8 @@ vector_store.add_documents(docs)
 # ZEUSDB_LOG_LEVEL=debug ZEUSDB_LOG_FORMAT=json python your_app.py
 ```
 
+To learn more about the full features of ZeusDB's enterprise logging capabilities please read the following [documentation](https://docs.zeusdb.com/en/latest/vector_database/logging.html).
+
 <br />
 
 ## Configuration Options
