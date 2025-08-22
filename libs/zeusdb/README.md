@@ -51,11 +51,27 @@ A high-performance LangChain integration for ZeusDB, bringing enterprise-grade v
 pip install -qU langchain-zeusdb
 ```
 
+### Getting Started
+
+This example uses *OpenAIEmbeddings*, which requires an OpenAI API key - [Get your OpenAI API key here](https://platform.openai.com/api-keys)
+
+If you prefer, you can also use this package with any other embedding provider (Hugging Face, Cohere, custom functions, etc.).
+```bash
+pip install langchain-openai
+```
+
+```python
+import os
+import getpass
+
+os.environ['OPENAI_API_KEY'] = getpass.getpass('OpenAI API Key:')
+```
+
 ### Basic Usage
 
 ```python
-from langchain-zeusdb import ZeusDBVectorStore
-from langchain-openai import OpenAIEmbeddings
+from langchain_zeusdb import ZeusDBVectorStore
+from langchain_openai import OpenAIEmbeddings
 from zeusdb import VectorDatabase
 
 # Initialize embeddings
@@ -87,7 +103,14 @@ vector_store.add_documents(docs)
 
 # Search
 results = vector_store.similarity_search("fast database", k=2)
-print(f"Found {len(results)} results")
+print(f"Found the following {len(results)} results:")
+print(results)
+```
+
+**Expected results:**
+```
+Found the following 2 results:
+[Document(id='ea2b4f13-b0b7-4cef-bb91-0fc4f4c41295', metadata={'source': 'docs'}, page_content='ZeusDB is fast'), Document(id='33dc1e87-a18a-4827-a0df-6ee47eabc7b2', metadata={'source': 'docs'}, page_content='LangChain is powerful')]
 ```
 
 ### Factory Methods
